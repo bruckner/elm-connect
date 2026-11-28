@@ -17,7 +17,7 @@ import Proto.Internal.Any
 import Proto.Internal.JsonError as JsonError
 import Proto.Internal.Percent as Percent
 import Proto.Internal.Registry
-import Proto.Json
+import Proto.Json.Decode
 import Proto.Registry exposing (Registry)
 import Rpc.Body
 import Rpc.Code as Code exposing (Code)
@@ -359,7 +359,7 @@ any other failure, a detail with no `"@type"` among them, is its `BadJson`.
 -}
 statusDetail : Registry -> Value -> Result Proto.Error.Error Any
 statusDetail registry detail =
-    case Json.Decode.decodeValue (Json.Decode.field "@type" Json.Decode.string |> Json.Decode.andThen (\_ -> Proto.Json.anyWith registry)) detail of
+    case Json.Decode.decodeValue (Json.Decode.field "@type" Json.Decode.string |> Json.Decode.andThen (\_ -> Proto.Json.Decode.any registry)) detail of
         Ok any ->
             Ok any
 

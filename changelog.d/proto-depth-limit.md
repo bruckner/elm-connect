@@ -16,5 +16,5 @@
   `Any`), its decoders at a nesting depth; a oneof with a member on the
   cycle, `decodeNestedFooKind`, and a recursive message's wrapper,
   `mergeNestedFoo_Binary`. Other messages generate what they did.
-  `Proto.Binary` gains `recursive` and `memo`, and `Proto.Json` gains
-  `memo` and `deeperWith`, which generated code calls.
+  `Proto.Binary` gains `recursive` and `memo`, and `Proto.Json.Decode`
+  gains `memo` and `deeperLazy`, which generated code calls.

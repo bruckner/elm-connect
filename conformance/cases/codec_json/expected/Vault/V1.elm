@@ -14,7 +14,8 @@ import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -125,22 +126,22 @@ registry =
 
 {-| Encodes an [`Item`](#Item) as proto3 JSON.
 -}
-encodeItem : Item -> Proto.Json.Encoder x
+encodeItem : Item -> Proto.Json.Encode.Encoder x
 encodeItem value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
 
 
 {-| Encodes a [`GetItemRequest`](#GetItemRequest) as proto3 JSON.
 -}
-encodeGetItemRequest : GetItemRequest -> Proto.Json.Encoder x
+encodeGetItemRequest : GetItemRequest -> Proto.Json.Encode.Encoder x
 encodeGetItemRequest value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
 
@@ -153,9 +154,9 @@ encodeGetItemRequest value =
 -}
 decodeItem : Json.Decode.Decoder Item
 decodeItem =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Item
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 
@@ -163,9 +164,9 @@ decodeItem =
 -}
 decodeGetItemRequest : Json.Decode.Decoder GetItemRequest
 decodeGetItemRequest =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed GetItemRequest
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 

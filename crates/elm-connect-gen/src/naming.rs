@@ -51,7 +51,7 @@ pub const REPOSITORY_BLOBS: &str = repository_blobs!();
 pub const REPOSITORY_FILES: &str = concat!(repository_blobs!(), env!("CARGO_PKG_VERSION"), "/");
 
 /// The runtime package's exposed modules, as its `elm.json` lists them.
-pub const RUNTIME_MODULES: [&str; 35] = [
+pub const RUNTIME_MODULES: [&str; 36] = [
     "Rpc",
     "Rpc.Call",
     "Rpc.Code",
@@ -78,7 +78,8 @@ pub const RUNTIME_MODULES: [&str; 35] = [
     "Proto.ErrorDetails",
     "Proto.Any",
     "Proto.Error",
-    "Proto.Json",
+    "Proto.Json.Encode",
+    "Proto.Json.Decode",
     "Proto.Binary",
     "Proto.Unknown",
     "Proto.Int64",
@@ -761,17 +762,17 @@ mod tests {
         assert_eq!(reserved_module("Bytes.Encode"), Some("elm/bytes"));
         assert_eq!(reserved_module("Json.Decode"), Some("elm/json"));
         assert_eq!(
-            reserved_module("Proto.Json"),
+            reserved_module("Proto.Json.Encode"),
             Some("the runtime package bruckner/elm-connect")
         );
-        assert_eq!(reserved_module("Rpc"), reserved_module("Proto.Json"));
+        assert_eq!(reserved_module("Rpc"), reserved_module("Proto.Json.Decode"));
         assert_eq!(
             reserved_module("Proto.Field"),
-            reserved_module("Proto.Json")
+            reserved_module("Proto.Json.Encode")
         );
         assert_eq!(
             reserved_module("Proto.EnumValue"),
-            reserved_module("Proto.Json")
+            reserved_module("Proto.Json.Encode")
         );
         assert_eq!(reserved_module("Proto.Descriptor"), None);
         assert_eq!(reserved_module("Notes.V1"), None);

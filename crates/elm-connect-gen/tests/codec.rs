@@ -1033,7 +1033,7 @@ fn codecs_module(pool: &DescriptorPool) -> Module {
         import("Codec.RoundTrip"),
         import("Codec.BinaryRoundTrip"),
         import("Json.Encode"),
-        import("Proto.Json"),
+        import("Proto.Json.Encode"),
         import("Proto.Registry"),
         import("Proto.WellKnown"),
     ];
@@ -1065,7 +1065,7 @@ fn codecs_module(pool: &DescriptorPool) -> Module {
                 value(format!("encode{name}")),
                 binop(
                     BinOp::ComposeR,
-                    apply(qualified("Proto.Json", "encodeWith"), [types()]),
+                    apply(qualified("Proto.Json.Encode", "encodeWith"), [types()]),
                     apply(
                         qualified("Result", "withDefault"),
                         [qualified("Json.Encode", "null")],

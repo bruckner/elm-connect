@@ -1,7 +1,8 @@
 module Proto.Internal.FieldMask exposing (fromJsonPath, roundTrips, toText)
 
-{-| A `google.protobuf.FieldMask`'s proto3 JSON text, which `Proto.Json`
-writes and reads and `Proto.Route` prints into a path or query.
+{-| A `google.protobuf.FieldMask`'s proto3 JSON text, which `Proto.Json.Encode`
+writes, `Proto.Json.Decode` reads and `Proto.Route` prints into a path or
+query.
 -}
 
 

@@ -9,7 +9,7 @@ import Proto.Binary as B
 import Proto.Duration as Duration exposing (Duration)
 import Proto.Error
 import Proto.Internal.Duration
-import Proto.Json
+import Proto.Json.Encode
 import Test exposing (Test, describe, fuzz, fuzz2, test)
 
 
@@ -328,7 +328,7 @@ octets bytes =
 
 jsonRefusal : Duration -> Result String String
 jsonRefusal duration =
-    Proto.Json.encode (Proto.Json.writeDuration duration)
+    Proto.Json.Encode.encode (Proto.Json.Encode.duration duration)
         |> Result.map (\_ -> "written")
         |> Result.mapError Proto.Error.toString
 

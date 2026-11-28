@@ -19,7 +19,8 @@ import Ledger.V1.Kind
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -192,15 +193,15 @@ encodeKind value =
 
 {-| Encodes an [`Entry`](#Entry) as proto3 JSON.
 -}
-encodeEntry : Entry -> Proto.Json.Encoder x
+encodeEntry : Entry -> Proto.Json.Encode.Encoder x
 encodeEntry value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            ([ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
-             , ( "amount", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.amount )
-             , ( "kind", Proto.Json.implicitField KindUnspecified encodeKind value.kind )
-             , ( "tags", Proto.Json.dictField identity Json.Encode.int value.tags )
-             , ( "marks", Proto.Json.repeatedField Json.Encode.int value.marks )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            ([ ( "memo", Proto.Json.Encode.implicit "" Json.Encode.string value.memo )
+             , ( "amount", Proto.Json.Encode.implicit "0" Proto.Json.Encode.int64 value.amount )
+             , ( "kind", Proto.Json.Encode.implicit KindUnspecified encodeKind value.kind )
+             , ( "tags", Proto.Json.Encode.dict identity Json.Encode.int value.tags )
+             , ( "marks", Proto.Json.Encode.repeated Json.Encode.int value.marks )
              ]
                 ++ encodeEntrySource value.source
             )
@@ -220,17 +221,17 @@ encodeEntrySource value =
             ]
 
         EntrySourceReversal member ->
-            [ ( "reversal", Just (Proto.Json.encodeTotal (encodeEntry member)) )
+            [ ( "reversal", Just (Proto.Json.Encode.encodeTotal (encodeEntry member)) )
             ]
 
 
 {-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON.
 -}
-encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encoder x
+encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encode.Encoder x
 encodeGetEntryRequest value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            [ ( "memo", Proto.Json.Encode.implicit "" Json.Encode.string value.memo )
             ]
         )
 
@@ -243,7 +244,7 @@ encodeGetEntryRequest value =
 -}
 decodeKind : Json.Decode.Decoder Kind
 decodeKind =
-    Proto.Json.enum "Kind"
+    Proto.Json.Decode.enum "Kind"
         KindUnspecified
         [ ( "KIND_UNSPECIFIED", 0, KindUnspecified )
         , ( "KIND_CREDIT", 1, KindCredit )
@@ -262,16 +263,16 @@ decodeEntry =
 -}
 decodeNestedEntry : Int -> Json.Decode.Decoder Entry
 decodeNestedEntry =
-    Proto.Json.memo
+    Proto.Json.Decode.memo
         (\depth ->
-            Proto.Json.message
+            Proto.Json.Decode.message
                 (Json.Decode.succeed Entry
-                    |> Proto.Json.messageField "memo" "" Proto.Json.string
-                    |> Proto.Json.messageField "amount" "0" Proto.Json.int64
-                    |> Proto.Json.messageField "kind" KindUnspecified decodeKind
-                    |> Proto.Json.messageField "tags" Dict.empty (Proto.Json.stringDict Proto.Json.int32)
-                    |> Proto.Json.oneof (decodeNestedEntrySource depth)
-                    |> Proto.Json.messageField "marks" [] (Json.Decode.list Proto.Json.int32)
+                    |> Proto.Json.Decode.field "memo" "" Proto.Json.Decode.string
+                    |> Proto.Json.Decode.field "amount" "0" Proto.Json.Decode.int64
+                    |> Proto.Json.Decode.field "kind" KindUnspecified decodeKind
+                    |> Proto.Json.Decode.field "tags" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.int32)
+                    |> Proto.Json.Decode.oneof (decodeNestedEntrySource depth)
+                    |> Proto.Json.Decode.field "marks" [] (Json.Decode.list Proto.Json.Decode.int32)
                 )
         )
 
@@ -287,10 +288,10 @@ decodeEntrySource =
 -}
 decodeNestedEntrySource : Int -> Json.Decode.Decoder EntrySource
 decodeNestedEntrySource depth =
-    Proto.Json.members "source"
+    Proto.Json.Decode.members "source"
         EntrySourceUnset
-        [ Proto.Json.member "account" (Json.Decode.map EntrySourceAccount Proto.Json.string)
-        , Proto.Json.member "reversal" (Json.Decode.map EntrySourceReversal (Json.Decode.lazy (\_ -> decodeNestedEntry (depth + 1))))
+        [ Proto.Json.Decode.member "account" (Json.Decode.map EntrySourceAccount Proto.Json.Decode.string)
+        , Proto.Json.Decode.member "reversal" (Json.Decode.map EntrySourceReversal (Json.Decode.lazy (\_ -> decodeNestedEntry (depth + 1))))
         ]
 
 
@@ -298,9 +299,9 @@ decodeNestedEntrySource depth =
 -}
 decodeGetEntryRequest : Json.Decode.Decoder GetEntryRequest
 decodeGetEntryRequest =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed GetEntryRequest
-            |> Proto.Json.messageField "memo" "" Proto.Json.string
+            |> Proto.Json.Decode.field "memo" "" Proto.Json.Decode.string
         )
 
 

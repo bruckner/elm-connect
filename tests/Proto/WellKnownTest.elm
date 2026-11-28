@@ -9,7 +9,7 @@ import Proto.Descriptors as Descriptors
 import Proto.Duration as Duration
 import Proto.Enum as Enum
 import Proto.Field as Field exposing (Cardinality(..), Kind(..), Scalar(..))
-import Proto.Json
+import Proto.Json.Decode
 import Proto.Message as Message exposing (Message)
 import Proto.Timestamp
 import Proto.Value
@@ -91,7 +91,7 @@ suite =
                 let
                     holding name =
                         Json.Decode.decodeString Json.Decode.value ("{\"@type\":\"type.googleapis.com/google.protobuf." ++ name ++ "\",\"value\":1e300}")
-                            |> Result.andThen (Json.Decode.decodeValue (Proto.Json.anyWith WellKnown.registry))
+                            |> Result.andThen (Json.Decode.decodeValue (Proto.Json.Decode.any WellKnown.registry))
                             |> Result.toMaybe
                 in
                 ( holding "FloatValue" |> Maybe.andThen (Any.unpack WellKnown.floatValue)

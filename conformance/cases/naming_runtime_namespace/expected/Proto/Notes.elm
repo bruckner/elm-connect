@@ -12,7 +12,8 @@ import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Notes.Note
 import Proto.Registry
@@ -90,9 +91,9 @@ registry =
 
 {-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
-encodeNote : Note -> Proto.Json.Encoder x
+encodeNote : Note -> Proto.Json.Encode.Encoder x
 encodeNote _ =
-    Proto.Json.succeed (Json.Encode.object [])
+    Proto.Json.Encode.succeed (Json.Encode.object [])
 
 
 
@@ -103,7 +104,7 @@ encodeNote _ =
 -}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
-    Proto.Json.emptyMessage
+    Proto.Json.Decode.emptyMessage
 
 
 

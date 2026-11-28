@@ -4,7 +4,10 @@
 use super::Deep;
 use super::field::{ValueShape, Zeroed};
 use super::recursion::DEPTH;
-use super::{Emitter, FAILS, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_ERROR, PROTO_JSON, docs};
+use super::{
+    Emitter, FAILS, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_ERROR, PROTO_JSON_DECODE,
+    PROTO_JSON_ENCODE, docs,
+};
 use crate::elm::ast::{Decl, Expr, Pattern, Type, Variant};
 use crate::elm::build::{apply, case, lambda, list, pctor, pvar, string, ty, ty_fn, var};
 use crate::ir::{Message, ModuleName};
@@ -51,16 +54,16 @@ impl Emitter {
 
     /// `encodeFooKind : FooKind -> List ( String, Maybe Json.Encode.Value )`:
     /// the set member under its JSON name, or nothing when unset, for the
-    /// message's encoder to add to its `Proto.Json.objectOfFields`. The set member
+    /// message's encoder to add to its `Proto.Json.Encode.object`. The set member
     /// is always `Just`, even at its type's default: being set is what a
     /// oneof says. A member of `google.protobuf.Empty` encodes as `{}`, one
     /// of `google.protobuf.NullValue` as `null`.
     ///
     /// A oneof with a member whose write can be refused gives each member
-    /// as a `Proto.Json.Field Proto.Error.Error` instead, for a run of
-    /// `Proto.Json.checkedFields`: `Proto.Json.writeMember` of a message's
+    /// as a `Proto.Json.Encode.Field Proto.Error.Error` instead, for a run of
+    /// `Proto.Json.Encode.checkedFields`: `Proto.Json.Encode.member` of a message's
     /// encoder or of a member that can be refused, else of its JSON in
-    /// `Proto.Json.succeed`. A member that counts a level, of a message
+    /// `Proto.Json.Encode.succeed`. A member that counts a level, of a message
     /// whose codecs take the depth (`counts`), and reaches an `Any` is
     /// written one level deeper, as the message's fields are.
     pub(super) fn oneof_encoder(&mut self, shape: &OneofShape, counts: bool) -> Decl {
@@ -97,9 +100,9 @@ impl Emitter {
                         // any refusal type already.
                         apply(encoder, [var(ONEOF_MEMBER)])
                     } else {
-                        apply(self.reference((PROTO_JSON, "succeed")), [encoded])
+                        apply(self.reference((PROTO_JSON_ENCODE, "succeed")), [encoded])
                     };
-                    let member = apply(self.reference((PROTO_JSON, "writeMember")), [encoder]);
+                    let member = apply(self.reference((PROTO_JSON_ENCODE, "member")), [encoder]);
                     let counted = variant.cyclic || self.counted.type_ref(&variant.ty);
                     let reaches = self.reaches(value);
                     self.deeper_if_counted(counts && counted, reaches, member)
@@ -112,7 +115,7 @@ impl Emitter {
             .collect();
         let member = if with {
             let problem = self.library_type(PROTO_ERROR, "Error", []);
-            self.library_type(PROTO_JSON, "Field", [problem])
+            self.library_type(PROTO_JSON_ENCODE, "Field", [problem])
         } else {
             let value_type = self.library_type(JSON_ENCODE, "Value", []);
             ty(self.core("Maybe"), [value_type])
@@ -147,23 +150,23 @@ impl Emitter {
     }
 
     /// `decodeFooKind : Json.Decode.Decoder FooKind`:
-    /// `Proto.Json.members "kind" FooKindUnset [ ... ]`, a member step per
+    /// `Proto.Json.Decode.members "kind" FooKindUnset [ ... ]`, a member step per
     /// member in declaration order, which reads the one member present
     /// (absent or `null` being not present), unset when none is, and fails
     /// on a malformed member or on more than one present (design §3.6).
     ///
-    /// Each step is `Proto.Json.member`, or `memberEither` when the JSON
+    /// Each step is `Proto.Json.Decode.member`, or `memberEither` when the JSON
     /// and proto names differ, with the member's decoder mapped onto its
     /// constructor; a member that closes a cycle decodes through
     /// `Json.Decode.lazy`. A member of `google.protobuf.Empty`, whose
-    /// constructor carries nothing, maps `Proto.Json.empty` onto it, so it
+    /// constructor carries nothing, maps `Proto.Json.Decode.empty` onto it, so it
     /// is set when its key holds an object. A member of
     /// `google.protobuf.Value` is a `nullMember` step (`nullMemberEither`),
     /// for which `null` is set, as protobuf's parsers read it, mapping
-    /// `Proto.Json.nestedValue depth` onto its constructor; its message
+    /// `Proto.Json.Decode.nestedValue depth` onto its constructor; its message
     /// nests, so the oneof's decoders always take the depth. A member of
     /// `google.protobuf.NullValue` is a `nullMember` step mapping
-    /// `Proto.Json.nullValue`, for which `null` is set likewise. A oneof
+    /// `Proto.Json.Decode.nullValue`, for which `null` is set likewise. A oneof
     /// with a member that reaches an `Any` gets
     /// `decodeFooKindWith`, taking the registry.
     /// For a oneof of a message whose codecs take the depth (`counts`)
@@ -187,12 +190,12 @@ impl Emitter {
                 let (helper, arg) = match value {
                     ValueShape::Zeroed(Zeroed::Empty) => {
                         let map = self.reference((JSON_DECODE, "map"));
-                        let empty = self.reference((PROTO_JSON, "empty"));
+                        let empty = self.reference((PROTO_JSON_DECODE, "empty"));
                         ("member", apply(map, [lambda([Pattern::Unit], ctor), empty]))
                     }
                     ValueShape::Zeroed(Zeroed::Json) if deep.is_some() => {
                         let map = self.reference((JSON_DECODE, "map"));
-                        let nested = self.reference((PROTO_JSON, "nestedValue"));
+                        let nested = self.reference((PROTO_JSON_DECODE, "nestedValue"));
                         ("nullMember", apply(map, [ctor, apply(nested, [var(DEPTH)])]))
                     }
                     ValueShape::Zeroed(Zeroed::Json) => unreachable!(
@@ -200,7 +203,7 @@ impl Emitter {
                     ),
                     ValueShape::Zeroed(Zeroed::Null) => {
                         let map = self.reference((JSON_DECODE, "map"));
-                        let null = self.reference((PROTO_JSON, "nullValue"));
+                        let null = self.reference((PROTO_JSON_DECODE, "nullValue"));
                         ("nullMember", apply(map, [lambda([Pattern::Unit], ctor), null]))
                     }
                     _ => {
@@ -227,12 +230,12 @@ impl Emitter {
                 } else {
                     format!("{helper}Either")
                 };
-                let step = self.reference((PROTO_JSON, &helper));
+                let step = self.reference((PROTO_JSON_DECODE, &helper));
                 apply(step, names.into_iter().chain([arg]))
             })
             .collect();
         self.deep = None;
-        let members = self.reference((PROTO_JSON, "members"));
+        let members = self.reference((PROTO_JSON_DECODE, "members"));
         let body = apply(
             members,
             [

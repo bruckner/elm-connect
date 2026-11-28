@@ -21,7 +21,8 @@ import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -263,28 +264,28 @@ encodeMarks value =
 
 {-| Encodes a [`Delimiters`](#Delimiters) as proto3 JSON.
 -}
-encodeDelimiters : Delimiters -> Proto.Json.Encoder x
+encodeDelimiters : Delimiters -> Proto.Json.Encode.Encoder x
 encodeDelimiters value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "lists", Proto.Json.implicitField "" Json.Encode.string value.lists )
-            , ( "blocks", Proto.Json.implicitField "" Json.Encode.string value.blocks )
-            , ( "code", Proto.Json.implicitField "" Json.Encode.string value.code )
-            , ( "inline", Proto.Json.implicitField "" Json.Encode.string value.inline )
-            , ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
-            , ( "whitespaceOnly", Proto.Json.implicitField "" Json.Encode.string value.whitespaceOnly )
-            , ( "unclosed", Proto.Json.implicitField "" Json.Encode.string value.unclosed )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            [ ( "lists", Proto.Json.Encode.implicit "" Json.Encode.string value.lists )
+            , ( "blocks", Proto.Json.Encode.implicit "" Json.Encode.string value.blocks )
+            , ( "code", Proto.Json.Encode.implicit "" Json.Encode.string value.code )
+            , ( "inline", Proto.Json.Encode.implicit "" Json.Encode.string value.inline )
+            , ( "text", Proto.Json.Encode.implicit "" Json.Encode.string value.text )
+            , ( "whitespaceOnly", Proto.Json.Encode.implicit "" Json.Encode.string value.whitespaceOnly )
+            , ( "unclosed", Proto.Json.Encode.implicit "" Json.Encode.string value.unclosed )
             ]
         )
 
 
 {-| Encodes a [`Docs`](#Docs) as proto3 JSON.
 -}
-encodeDocs : Docs -> Proto.Json.Encoder x
+encodeDocs : Docs -> Proto.Json.Encode.Encoder x
 encodeDocs value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "field", Proto.Json.implicitField "" Json.Encode.string value.field )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            [ ( "field", Proto.Json.Encode.implicit "" Json.Encode.string value.field )
             ]
         )
 
@@ -297,7 +298,7 @@ encodeDocs value =
 -}
 decodeMarks : Json.Decode.Decoder Marks
 decodeMarks =
-    Proto.Json.enum "Marks"
+    Proto.Json.Decode.enum "Marks"
         MarksUnspecified
         [ ( "MARKS_UNSPECIFIED", 0, MarksUnspecified )
         , ( "MARKS_LIST", 1, MarksList )
@@ -309,15 +310,15 @@ decodeMarks =
 -}
 decodeDelimiters : Json.Decode.Decoder Delimiters
 decodeDelimiters =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Delimiters
-            |> Proto.Json.messageField "lists" "" Proto.Json.string
-            |> Proto.Json.messageField "blocks" "" Proto.Json.string
-            |> Proto.Json.messageField "code" "" Proto.Json.string
-            |> Proto.Json.messageField "inline" "" Proto.Json.string
-            |> Proto.Json.messageField "text" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "whitespaceOnly" "whitespace_only" "" Proto.Json.string
-            |> Proto.Json.messageField "unclosed" "" Proto.Json.string
+            |> Proto.Json.Decode.field "lists" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "blocks" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "code" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "inline" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "text" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "whitespaceOnly" "whitespace_only" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "unclosed" "" Proto.Json.Decode.string
         )
 
 
@@ -325,9 +326,9 @@ decodeDelimiters =
 -}
 decodeDocs : Json.Decode.Decoder Docs
 decodeDocs =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Docs
-            |> Proto.Json.messageField "field" "" Proto.Json.string
+            |> Proto.Json.Decode.field "field" "" Proto.Json.Decode.string
         )
 
 

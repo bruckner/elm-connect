@@ -4,7 +4,7 @@ import Expect
 import Json.Encode
 import Proto.Enum as Enum exposing (Enum)
 import Proto.EnumValue as EnumValue
-import Proto.Json
+import Proto.Json.Decode
 import Test exposing (Test, describe, test)
 
 
@@ -44,7 +44,7 @@ priorityAs =
                 PriorityLow ->
                     Json.Encode.string "LOW"
         )
-        (Proto.Json.enum "Priority"
+        (Proto.Json.Decode.enum "Priority"
             PriorityNone
             [ ( "NONE", 0, PriorityNone )
             , ( "HIGH", 2, PriorityHigh )

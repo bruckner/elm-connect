@@ -27,5 +27,5 @@
 - The `types::deep_nesting` warning says whether reads count the chain's
   messages: they refuse a chain of messages that nest past 100 levels,
   and read a chain of messages that do not to its end.
-- New in the runtime, called by generated code: `Proto.Json.deeper`;
+- New in the runtime, called by generated code: `Proto.Json.Decode.deeper`;
   regenerate.

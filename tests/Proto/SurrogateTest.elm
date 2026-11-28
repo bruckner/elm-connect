@@ -13,7 +13,7 @@ import Json.Decode
 import Proto.Bytes
 import Proto.Duration
 import Proto.Int64
-import Proto.Json
+import Proto.Json.Decode
 import Proto.Timestamp
 import Test exposing (Test, describe, test)
 
@@ -28,7 +28,7 @@ suite =
                     |> Expect.equal [ Nothing, Nothing, Nothing ]
         , test "is not in a timestamp read from JSON" <|
             \_ ->
-                Json.Decode.decodeString Proto.Json.timestamp "\"1970-01-01T00:00:00.\\udc00Z\""
+                Json.Decode.decodeString Proto.Json.Decode.timestamp "\"1970-01-01T00:00:00.\\udc00Z\""
                     |> Result.toMaybe
                     |> Expect.equal Nothing
         , test "is not base64" <|
@@ -39,12 +39,12 @@ suite =
         , test "is not base64 read from JSON" <|
             \_ ->
                 [ "\"\\udc00AAA\"", "\"AA\\udc00A\"", "\"\\udc00+-\"" ]
-                    |> List.map (Json.Decode.decodeString Proto.Json.bytes >> Result.toMaybe)
+                    |> List.map (Json.Decode.decodeString Proto.Json.Decode.bytes >> Result.toMaybe)
                     |> Expect.equal [ Nothing, Nothing, Nothing ]
         , test "is not a digit of a 64-bit integer" <|
             \_ ->
                 ( List.map Proto.Int64.toInt [ "1\u{DC00}2", "\u{DC00}1", "12\u{DC00}" ]
-                , List.map (Json.Decode.decodeString Proto.Json.int64 >> Result.toMaybe) [ "\"1\\udc002\"", "\"\\udc001\"" ]
+                , List.map (Json.Decode.decodeString Proto.Json.Decode.int64 >> Result.toMaybe) [ "\"1\\udc002\"", "\"\\udc001\"" ]
                 )
                     |> Expect.equal ( [ Nothing, Nothing, Nothing ], [ Nothing, Nothing ] )
         , test "is not a digit of a duration" <|
@@ -54,6 +54,6 @@ suite =
                     |> Expect.equal [ Nothing, Nothing, Nothing ]
         , test "stays as it is in a field mask's paths" <|
             \_ ->
-                Json.Decode.decodeString Proto.Json.fieldMask "\"\\udc00Ab,a.b\\udc00C\""
+                Json.Decode.decodeString Proto.Json.Decode.fieldMask "\"\\udc00Ab,a.b\\udc00C\""
                     |> Expect.equal (Ok [ "\u{DC00}_ab", "a.b\u{DC00}_c" ])
         ]

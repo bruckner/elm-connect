@@ -17,7 +17,8 @@ import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -191,34 +192,34 @@ encodeShelfBytes value =
 
 {-| Encodes a [`Book`](#Book) as proto3 JSON.
 -}
-encodeBook : Book -> Proto.Json.Encoder x
+encodeBook : Book -> Proto.Json.Encode.Encoder x
 encodeBook value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            [ ( "title", Proto.Json.Encode.implicit "" Json.Encode.string value.title )
             ]
         )
 
 
 {-| Encodes a [`BookBytes`](#BookBytes) as proto3 JSON.
 -}
-encodeBookBytes : BookBytes -> Proto.Json.Encoder x
+encodeBookBytes : BookBytes -> Proto.Json.Encode.Encoder x
 encodeBookBytes value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "content", Proto.Json.implicitField "" Proto.Json.encodeBytes value.content )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            [ ( "content", Proto.Json.Encode.implicit "" Proto.Json.Encode.bytes value.content )
             ]
         )
 
 
 {-| Encodes a [`Shelf`](#Shelf) as proto3 JSON.
 -}
-encodeShelf : Shelf -> Proto.Json.Encoder x
+encodeShelf : Shelf -> Proto.Json.Encode.Encoder x
 encodeShelf value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "books", Proto.Json.totalRepeatedField encodeBook value.books )
-            , ( "kind", Proto.Json.implicitField ShelfBytesUnspecified encodeShelfBytes value.kind )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            [ ( "books", Proto.Json.Encode.totalRepeated encodeBook value.books )
+            , ( "kind", Proto.Json.Encode.implicit ShelfBytesUnspecified encodeShelfBytes value.kind )
             ]
         )
 
@@ -231,7 +232,7 @@ encodeShelf value =
 -}
 decodeShelfBytes : Json.Decode.Decoder ShelfBytes
 decodeShelfBytes =
-    Proto.Json.enum "ShelfBytes"
+    Proto.Json.Decode.enum "ShelfBytes"
         ShelfBytesUnspecified
         [ ( "SHELF_BYTES_UNSPECIFIED", 0, ShelfBytesUnspecified )
         , ( "SHELF_BYTES_RAW", 1, ShelfBytesRaw )
@@ -242,9 +243,9 @@ decodeShelfBytes =
 -}
 decodeBook : Json.Decode.Decoder Book
 decodeBook =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Book
-            |> Proto.Json.messageField "title" "" Proto.Json.string
+            |> Proto.Json.Decode.field "title" "" Proto.Json.Decode.string
         )
 
 
@@ -252,9 +253,9 @@ decodeBook =
 -}
 decodeBookBytes : Json.Decode.Decoder BookBytes
 decodeBookBytes =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed BookBytes
-            |> Proto.Json.messageField "content" "" Proto.Json.bytes
+            |> Proto.Json.Decode.field "content" "" Proto.Json.Decode.bytes
         )
 
 
@@ -262,10 +263,10 @@ decodeBookBytes =
 -}
 decodeShelf : Json.Decode.Decoder Shelf
 decodeShelf =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Shelf
-            |> Proto.Json.messageField "books" [] (Json.Decode.list decodeBook)
-            |> Proto.Json.messageField "kind" ShelfBytesUnspecified decodeShelfBytes
+            |> Proto.Json.Decode.field "books" [] (Json.Decode.list decodeBook)
+            |> Proto.Json.Decode.field "kind" ShelfBytesUnspecified decodeShelfBytes
         )
 
 

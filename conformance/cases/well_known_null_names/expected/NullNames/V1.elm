@@ -6,7 +6,7 @@ module NullNames.V1 exposing (..)
 
 {-| A field and oneof members that null sets, each with a JSON name that
 differs from its proto name, so they decode with the two-name steps
-messageNullFieldEither and nullMemberEither (design §3.5, §3.6).
+nullFieldEither and nullMemberEither (design §3.5, §3.6).
 -}
 
 import Bytes.Encode
@@ -16,7 +16,8 @@ import NullNames.V1.Reading
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Error
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Value
@@ -115,30 +116,30 @@ registry =
 
 {-| Encodes a [`Reading`](#Reading) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeReading : Reading -> Proto.Json.Encoder Proto.Error.Error
+encodeReading : Reading -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeReading value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "rawValue", Proto.Json.writeOptional Proto.Json.writeValue value.rawValue )
+    Proto.Json.Encode.checkedObject
+        [ Proto.Json.Encode.checkedFields
+            [ ( "rawValue", Proto.Json.Encode.optional Proto.Json.Encode.value value.rawValue )
             ]
-        , Proto.Json.checkedFields (encodeReadingChoice value.choice)
+        , Proto.Json.Encode.checkedFields (encodeReadingChoice value.choice)
         ]
 
 
 {-| Encodes a [`ReadingChoice`](#ReadingChoice) as the members of its message's JSON object, or fails if the input contains a bad value.
 -}
-encodeReadingChoice : ReadingChoice -> List ( String, Proto.Json.Field Proto.Error.Error )
+encodeReadingChoice : ReadingChoice -> List ( String, Proto.Json.Encode.Field Proto.Error.Error )
 encodeReadingChoice value =
     case value of
         ReadingChoiceUnset ->
             []
 
         ReadingChoiceJsonValue member ->
-            [ ( "jsonValue", Proto.Json.writeMember (Proto.Json.writeValue member) )
+            [ ( "jsonValue", Proto.Json.Encode.member (Proto.Json.Encode.value member) )
             ]
 
         ReadingChoiceNullValue ->
-            [ ( "nullValue", Proto.Json.writeMember (Proto.Json.succeed Json.Encode.null) )
+            [ ( "nullValue", Proto.Json.Encode.member (Proto.Json.Encode.succeed Json.Encode.null) )
             ]
 
 
@@ -157,10 +158,10 @@ decodeReading =
 -}
 decodeNestedReading : Int -> Json.Decode.Decoder Reading
 decodeNestedReading depth =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Reading
-            |> Proto.Json.messageNullFieldEither "rawValue" "raw_value" (Proto.Json.nestedValue depth)
-            |> Proto.Json.oneof (decodeNestedReadingChoice depth)
+            |> Proto.Json.Decode.nullFieldEither "rawValue" "raw_value" (Proto.Json.Decode.nestedValue depth)
+            |> Proto.Json.Decode.oneof (decodeNestedReadingChoice depth)
         )
 
 
@@ -175,10 +176,10 @@ decodeReadingChoice =
 -}
 decodeNestedReadingChoice : Int -> Json.Decode.Decoder ReadingChoice
 decodeNestedReadingChoice depth =
-    Proto.Json.members "choice"
+    Proto.Json.Decode.members "choice"
         ReadingChoiceUnset
-        [ Proto.Json.nullMemberEither "jsonValue" "json_value" (Json.Decode.map ReadingChoiceJsonValue (Proto.Json.nestedValue depth))
-        , Proto.Json.nullMemberEither "nullValue" "null_value" (Json.Decode.map (\() -> ReadingChoiceNullValue) Proto.Json.nullValue)
+        [ Proto.Json.Decode.nullMemberEither "jsonValue" "json_value" (Json.Decode.map ReadingChoiceJsonValue (Proto.Json.Decode.nestedValue depth))
+        , Proto.Json.Decode.nullMemberEither "nullValue" "null_value" (Json.Decode.map (\() -> ReadingChoiceNullValue) Proto.Json.Decode.nullValue)
         ]
 
 

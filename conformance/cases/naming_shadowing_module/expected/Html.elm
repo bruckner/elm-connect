@@ -16,7 +16,8 @@ import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -98,11 +99,11 @@ registry =
 
 {-| Encodes an [`Attributes`](#Attributes) as proto3 JSON.
 -}
-encodeAttributes : Attributes -> Proto.Json.Encoder x
+encodeAttributes : Attributes -> Proto.Json.Encode.Encoder x
 encodeAttributes value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "class", Proto.Json.implicitField "" Json.Encode.string value.class )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            [ ( "class", Proto.Json.Encode.implicit "" Json.Encode.string value.class )
             ]
         )
 
@@ -115,9 +116,9 @@ encodeAttributes value =
 -}
 decodeAttributes : Json.Decode.Decoder Attributes
 decodeAttributes =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Attributes
-            |> Proto.Json.messageField "class" "" Proto.Json.string
+            |> Proto.Json.Decode.field "class" "" Proto.Json.Decode.string
         )
 
 

@@ -9,7 +9,8 @@ import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Query
 import Proto.Registry
@@ -161,35 +162,35 @@ registry =
 
 {-| Encodes a [`Thing`](#Thing) as proto3 JSON.
 -}
-encodeThing : Thing -> Proto.Json.Encoder x
+encodeThing : Thing -> Proto.Json.Encode.Encoder x
 encodeThing value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
 
 
 {-| Encodes a [`Criteria`](#Criteria) as proto3 JSON.
 -}
-encodeCriteria : Criteria -> Proto.Json.Encoder x
+encodeCriteria : Criteria -> Proto.Json.Encode.Encoder x
 encodeCriteria value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "state", Proto.Json.implicitField "" Json.Encode.string value.status )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            [ ( "state", Proto.Json.Encode.implicit "" Json.Encode.string value.status )
             ]
         )
 
 
 {-| Encodes a [`GetThingRequest`](#GetThingRequest) as proto3 JSON.
 -}
-encodeGetThingRequest : GetThingRequest -> Proto.Json.Encoder x
+encodeGetThingRequest : GetThingRequest -> Proto.Json.Encode.Encoder x
 encodeGetThingRequest value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.resource )
-            , ( "pageSize", Proto.Json.implicitField 0 Json.Encode.int value.limit )
-            , ( "filter", Proto.Json.totalOptionalField encodeCriteria value.filter )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.resource )
+            , ( "pageSize", Proto.Json.Encode.implicit 0 Json.Encode.int value.limit )
+            , ( "filter", Proto.Json.Encode.totalOptional encodeCriteria value.filter )
             ]
         )
 
@@ -202,9 +203,9 @@ encodeGetThingRequest value =
 -}
 decodeThing : Json.Decode.Decoder Thing
 decodeThing =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Thing
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 
@@ -212,9 +213,9 @@ decodeThing =
 -}
 decodeCriteria : Json.Decode.Decoder Criteria
 decodeCriteria =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Criteria
-            |> Proto.Json.messageField "state" "" Proto.Json.string
+            |> Proto.Json.Decode.field "state" "" Proto.Json.Decode.string
         )
 
 
@@ -222,11 +223,11 @@ decodeCriteria =
 -}
 decodeGetThingRequest : Json.Decode.Decoder GetThingRequest
 decodeGetThingRequest =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed GetThingRequest
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "pageSize" "page_size" 0 Proto.Json.int32
-            |> Proto.Json.messageField "filter" Nothing (Json.Decode.map Just decodeCriteria)
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "pageSize" "page_size" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "filter" Nothing (Json.Decode.map Just decodeCriteria)
         )
 
 

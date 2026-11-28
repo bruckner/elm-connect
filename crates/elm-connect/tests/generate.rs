@@ -324,5 +324,5 @@ fn module_prefix_moves_every_generated_module_and_its_path() {
     let notes = &generated.files[0].content;
     assert!(notes.contains("module Api.Example.Notes.V1 exposing"));
     assert!(notes.contains("import Api.Example.Users.V1\n"));
-    assert!(notes.contains("import Proto.Json\n"));
+    assert!(notes.contains("import Proto.Json.Decode\n"));
 }

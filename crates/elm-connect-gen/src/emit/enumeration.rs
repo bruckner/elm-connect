@@ -1,7 +1,7 @@
 //! An enum's three declarations: its custom type, its encoder and its
 //! decoder (design §3.3).
 
-use super::{Emitter, JSON_DECODE, JSON_ENCODE, PROTO_JSON, docs};
+use super::{Emitter, JSON_DECODE, JSON_ENCODE, PROTO_JSON_DECODE, docs};
 use crate::elm::ast::{Decl, Expr, Type, Variant};
 use crate::elm::build::{apply, case, int, list, pctor, pvar, string, ty, var};
 use crate::ir::{Enum, ModuleName};
@@ -57,8 +57,8 @@ impl Emitter {
         }
     }
 
-    /// `decodeStatus : Json.Decode.Decoder Status`: `Proto.Json.enum`, or
-    /// `Proto.Json.enumOrZero` under `enum_unknown=zero`, with the enum's
+    /// `decodeStatus : Json.Decode.Decoder Status`: `Proto.Json.Decode.enum`, or
+    /// `Proto.Json.Decode.enumOrZero` under `enum_unknown=zero`, with the enum's
     /// proto name, the zero value and a
     /// `( name, number, constructor )` row per value name, an alias's row
     /// after its constructor's own.
@@ -78,7 +78,7 @@ impl Emitter {
             EnumUnknown::Fail => "enum",
             EnumUnknown::Zero => "enumOrZero",
         };
-        let decode = self.reference((PROTO_JSON, decoder));
+        let decode = self.reference((PROTO_JSON_DECODE, decoder));
         let body = apply(
             decode,
             [

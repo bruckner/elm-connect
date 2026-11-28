@@ -14,7 +14,10 @@ In short:
    ([The client and the protocol](#the-client-and-the-protocol)).
 3. Add the codec to the annotations that name `Rpc.Call`
    ([The codec in the type](#the-codec-in-the-type)).
-4. Follow the compiler through the rest: the pure halves, traces and
+4. Rename what the application calls in `Proto.Json`, now
+   `Proto.Json.Encode` and `Proto.Json.Decode`
+   ([The JSON codecs](#the-json-codecs)).
+5. Follow the compiler through the rest: the pure halves, traces and
    any method written by hand.
 
 The release notes ([CHANGELOG.md](../CHANGELOG.md)) list every change,
@@ -446,9 +449,9 @@ JSON.
   binary and `toJson registry` its proto3 JSON, failing with
   `UnregisteredType` or `BadBinary`, of a nested `Any` named by its own
   type.
-- Proto3 JSON of an `Any` goes through a registry: `Proto.Json.anyWith
+- Proto3 JSON of an `Any` goes through a registry: `Proto.Json.Decode.any
   registry` replaces `any`, and a message holding an `Any` is written
-  with `Proto.Json.encodeWith registry`, where 0.1 had `encodeAny`.
+  with `Proto.Json.Encode.encodeWith registry`, where 0.1 had `encodeAny`.
   An `"@type"` the registry lacks fails the read, naming the URL, and
   the write gives `UnregisteredType`, as protojson does; 0.1 kept such
   an `Any` as JSON. `Proto.Registry.lenient` makes a registry keep it as
@@ -463,10 +466,10 @@ JSON.
   `Notes.V1.Note.descriptor`.
 - A generated message that reaches an `Any` has `decodeNoteWith`, which
   takes the registry, in place of `decodeNote`.
-- A generated encoder gives a `Proto.Json.Encoder`, not a
-  `Json.Encode.Value`: `Proto.Json.encodeTotal (encodeNote note)` writes
+- A generated encoder gives a `Proto.Json.Encode.Encoder`, not a
+  `Json.Encode.Value`: `Proto.Json.Encode.encodeTotal (encodeNote note)` writes
   one that nothing it holds can refuse, as `encodeNote note` did, and
-  `Proto.Json.encode` or `encodeWith registry` one that can (a message
+  `Proto.Json.Encode.encode` or `encodeWith registry` one that can (a message
   holding an `Any`, a `Timestamp`, `Duration`, `FieldMask`, `Struct`,
   `Value` or `ListValue`), giving a `Result`: a value proto3 JSON has no
   form for is refused with `Proto.Error.BadValue`, where 0.1 wrote it.
@@ -486,7 +489,7 @@ JSON.
 - A method holds no registry: a hand-written method's JSON codecs take
   the client's (`Proto.Method.initJson "notes.v1.NotesService" "GetNote"
   encodeGetNoteRequest (\_ -> decodeNote)`); a hand-written encoder `f :
-  a -> Json.Encode.Value` is given as `Proto.Json.succeed << f`.
+  a -> Json.Encode.Value` is given as `Proto.Json.Encode.succeed << f`.
   `Proto.Method.encodeRequest`, `responseDecoder`, `Rpc.Call.requestJson`
   and `Rpc.Call.toJson` take a registry, and the first, third and fourth
   give a `Result`.
@@ -679,6 +682,146 @@ valid (`Proto.Timestamp.isValid`); a proto3 JSON write refuses one that
 is not valid, with `Proto.Error.BadValue`, and `normalize` gives its
 normal form.
 
+## The JSON codecs
+
+`Proto.Json` is gone: its encoders are in `Proto.Json.Encode` and its
+decoders in `Proto.Json.Decode`, as elm/json splits `Json.Encode` and
+`Json.Decode`. Generated code calls them, so most applications meet the
+change only in what they call themselves: running a generated encoder
+(`Proto.Json.Encode.encodeTotal`, `encode`, `encodeWith`) and
+`Proto.Json.Encode.succeed` for an encoder written by hand. Some names
+match elm/json's (`Proto.Json.Encode.object`, `Proto.Json.Decode.float`),
+and every reference is written qualified.
+
+An encoder's name says whether it can refuse. The bare name cannot,
+and gives plain JSON (`object`, `repeated`, `implicit`): 0.1's
+`objectOfFields`, `repeatedField`, `dictField` and `boolMapField` are
+`object`, `repeated`, `dict` and `boolMap`. Where a name exists in both
+forms, the one that can refuse is prefixed `checked`
+(`checkedObject`); a name that exists only in that form has no prefix
+(`optional`, `timestamp`); one that unwraps a message encoder that
+cannot refuse begins with `total`; a value encoder is named after the
+decoder it mirrors (`int64`, `bytes`). The decoder of a `double` field is
+`Proto.Json.Decode.double`, and of a `float` field `Proto.Json.Decode.float`,
+as `Proto.Binary` names them: 0.1's `Proto.Json.float`, which read a
+`double`, is `Proto.Json.Decode.double`, not `Proto.Json.Decode.float`. Likewise 0.1's
+`Proto.Json.field` and `fieldEither` checked for themselves that the
+JSON is an object; `Proto.Json.Decode.field` and `fieldEither`, of the
+same types, leave that to `Proto.Json.Decode.message`, so a pipeline of
+them is wrapped in it.
+
+Every name `Proto.Json` has had, in 0.1.0 or on `main` before 0.2
+(marked ¹):
+
+| `Proto.Json` | In 0.2 |
+|---|---|
+| `Encoder` ¹ | `Proto.Json.Encode.Encoder` |
+| `encode` ¹ | `Proto.Json.Encode.encode` |
+| `encodeWith` ¹ | `Proto.Json.Encode.encodeWith` |
+| `encodeTotal` ¹ | `Proto.Json.Encode.encodeTotal` |
+| `succeed` ¹ | `Proto.Json.Encode.succeed` |
+| `writeObject` ¹ | `Proto.Json.Encode.checkedObject` |
+| `Fields` ¹ | `Proto.Json.Encode.Fields` |
+| `plainFields` ¹ | `Proto.Json.Encode.fields` |
+| `checkedFields` ¹ | `Proto.Json.Encode.checkedFields` |
+| `Field` ¹ | `Proto.Json.Encode.Field` |
+| `writeOptional` ¹ | `Proto.Json.Encode.optional` |
+| `writeRepeated` ¹ | `Proto.Json.Encode.checkedRepeated` |
+| `writeDict` ¹ | `Proto.Json.Encode.checkedDict` |
+| `writeBoolMap` ¹ | `Proto.Json.Encode.checkedBoolMap` |
+| `writeMember` ¹ | `Proto.Json.Encode.member` |
+| `writeDeeper` ¹ | `Proto.Json.Encode.deeper` |
+| `writeTimestamp` ¹ | `Proto.Json.Encode.timestamp` |
+| `writeDuration` ¹ | `Proto.Json.Encode.duration` |
+| `writeFieldMask` ¹ | `Proto.Json.Encode.fieldMask` |
+| `writeStruct` ¹ | `Proto.Json.Encode.struct` |
+| `writeListValue` ¹ | `Proto.Json.Encode.listValue` |
+| `writeValue` ¹ | `Proto.Json.Encode.value` |
+| `writeAny` ¹ | `Proto.Json.Encode.any` |
+| `objectOfFields` | `Proto.Json.Encode.object` |
+| `implicitField` | `Proto.Json.Encode.implicit` |
+| `implicitFloatField` | `Proto.Json.Encode.implicitDouble` |
+| `implicitBytesField` | `Proto.Json.Encode.implicitBytes` |
+| `repeatedField` | `Proto.Json.Encode.repeated` |
+| `dictField` | `Proto.Json.Encode.dict` |
+| `boolMapField` | `Proto.Json.Encode.boolMap` |
+| `totalOptionalField` ¹ | `Proto.Json.Encode.totalOptional` |
+| `totalRepeatedField` ¹ | `Proto.Json.Encode.totalRepeated` |
+| `encodeInt64` | `Proto.Json.Encode.int64` |
+| `encodeInt64AsInt` | `Proto.Json.Encode.int64AsInt` |
+| `encodeFloat` | `Proto.Json.Encode.double` |
+| `encodeBytes` | `Proto.Json.Encode.bytes` |
+| `encodeBytesAsBytes` | `Proto.Json.Encode.bytesAsBytes` |
+| `encodeEmpty` | `Proto.Json.Encode.empty` |
+| `encodeNullValue` ¹ | `Proto.Json.Encode.nullValue` |
+| `message` ¹ | `Proto.Json.Decode.message` |
+| `messageField` ¹ | `Proto.Json.Decode.field` |
+| `messageFieldEither` ¹ | `Proto.Json.Decode.fieldEither` |
+| `messageNullField` ¹ | `Proto.Json.Decode.nullField` |
+| `messageNullFieldEither` ¹ | `Proto.Json.Decode.nullFieldEither` |
+| `emptyMessage` | `Proto.Json.Decode.emptyMessage` |
+| `memo` ¹ | `Proto.Json.Decode.memo` |
+| `deeper` ¹ | `Proto.Json.Decode.deeper` |
+| `deeperWith` ¹ | `Proto.Json.Decode.deeperLazy` |
+| `oneof` | `Proto.Json.Decode.oneof` |
+| `members` | `Proto.Json.Decode.members` |
+| `Member` | `Proto.Json.Decode.Member` |
+| `member` | `Proto.Json.Decode.member` |
+| `memberEither` | `Proto.Json.Decode.memberEither` |
+| `nullMember` ¹ | `Proto.Json.Decode.nullMember` |
+| `nullMemberEither` ¹ | `Proto.Json.Decode.nullMemberEither` |
+| `enum` | `Proto.Json.Decode.enum` |
+| `enumOrZero` | `Proto.Json.Decode.enumOrZero` |
+| `stringDict` ¹ | `Proto.Json.Decode.stringDict` |
+| `int32Dict` | `Proto.Json.Decode.int32Dict` |
+| `uint32Dict` | `Proto.Json.Decode.uint32Dict` |
+| `int64Dict` | `Proto.Json.Decode.int64Dict` |
+| `uint64Dict` | `Proto.Json.Decode.uint64Dict` |
+| `boolMap` | `Proto.Json.Decode.boolMap` |
+| `string` ¹ | `Proto.Json.Decode.string` |
+| `int32` | `Proto.Json.Decode.int32` |
+| `uint32` | `Proto.Json.Decode.uint32` |
+| `int64` | `Proto.Json.Decode.int64` |
+| `uint64` | `Proto.Json.Decode.uint64` |
+| `int64AsInt` | `Proto.Json.Decode.int64AsInt` |
+| `uint64AsInt` | `Proto.Json.Decode.uint64AsInt` |
+| `float` | `Proto.Json.Decode.double` |
+| `float32` ¹ | `Proto.Json.Decode.float` |
+| `bytes` | `Proto.Json.Decode.bytes` |
+| `bytesAsBytes` | `Proto.Json.Decode.bytesAsBytes` |
+| `timestamp` | `Proto.Json.Decode.timestamp` |
+| `duration` | `Proto.Json.Decode.duration` |
+| `fieldMask` | `Proto.Json.Decode.fieldMask` |
+| `empty` | `Proto.Json.Decode.empty` |
+| `nullValue` ¹ | `Proto.Json.Decode.nullValue` |
+| `struct` | `Proto.Json.Decode.struct` |
+| `nestedStruct` ¹ | `Proto.Json.Decode.nestedStruct` |
+| `value` ¹ | `Proto.Json.Decode.value` |
+| `nestedValue` ¹ | `Proto.Json.Decode.nestedValue` |
+| `listValue` | `Proto.Json.Decode.listValue` |
+| `nestedListValue` ¹ | `Proto.Json.Decode.nestedListValue` |
+| `anyWith` ¹ | `Proto.Json.Decode.any` |
+| `nestedAnyWith` ¹ | `Proto.Json.Decode.nestedAny` |
+| `registryDepth` ¹ | `Proto.Json.Decode.registryDepth` |
+| `field` | `Proto.Json.Decode.field`, of the same type, inside `Proto.Json.Decode.message`: 0.1's checked that the JSON is an object, and this one leaves that to `message` |
+| `fieldEither` | `Proto.Json.Decode.fieldEither`, inside `Proto.Json.Decode.message` |
+| `valueField` | `Proto.Json.Decode.nullField name (Proto.Json.Decode.nestedValue 0)` |
+| `valueFieldEither` | `Proto.Json.Decode.nullFieldEither jsonName protoName (Proto.Json.Decode.nestedValue 0)` |
+| `emptyMember` | `Proto.Json.Decode.member name (Json.Decode.map (\() -> Ctor) Proto.Json.Decode.empty)` |
+| `emptyMemberEither` | `Proto.Json.Decode.memberEither`, as for `emptyMember` |
+| `valueMember` | `Proto.Json.Decode.nullMember name (Json.Decode.map Ctor (Proto.Json.Decode.nestedValue 0))` |
+| `valueMemberEither` | `Proto.Json.Decode.nullMemberEither`, as for `valueMember` |
+| `encodeBoolMap` | `Proto.Json.Encode.boolMap` for a field |
+| `encodeTimestamp` | `Proto.Json.Encode.timestamp`, which can refuse; run it with `Proto.Json.Encode.encode` |
+| `encodeDuration` | `Proto.Json.Encode.duration`, as for `encodeTimestamp` |
+| `encodeFieldMask` | `Proto.Json.Encode.fieldMask`, as for `encodeTimestamp` |
+| `encodeStruct` | `Proto.Json.Encode.struct`, as for `encodeTimestamp`; `Proto.Value.toJson` unchecked |
+| `encodeListValue` | `Proto.Json.Encode.listValue`, as for `encodeTimestamp` |
+| `any` | `Proto.Json.Decode.any registry` |
+| `encodeAny` | `Proto.Json.Encode.any`, run with `Proto.Json.Encode.encodeWith registry` |
+
+¹ Not in 0.1.0: added on `main` before 0.2.
+
 ## The generator
 
 - A `google.protobuf.Duration` field is written
@@ -714,24 +857,27 @@ normal form.
 ## Regenerating
 
 Generated code names the runtime release it was generated for, and
-0.2's runtime exposes `Proto.Version.v0_2` alone. Code generated by 0.1
-against the 0.2 runtime stops with:
+0.2's runtime exposes `Proto.Version.v0_2` alone, and no `Proto.Json`.
+Code generated by 0.1 against the 0.2 runtime stops with:
 
 ```text
--- NAMING ERROR ----------------------------------------- generated/Greet/V1.elm
+-- MODULE NOT FOUND ------------------------------------- generated/Greet/V1.elm
 
-I cannot find a `Proto.Version.v0_1` variable:
+You are trying to import a `Proto.Json` module:
 
-20|     Proto.Version.v0_1
-        ^^^^^^^^^^^^^^^^^^
-The `Proto.Version` module does not expose a `v0_1` variable. These names seem
-close though:
+10| import Proto.Json
+           ^^^^^^^^^^
+I checked the "dependencies" and "source-directories" listed in your elm.json,
+but I cannot find it! Maybe it is a typo for one of these names?
 
-    Proto.Version.v0_2
-    Proto.Json.enum
-    Proto.Json.bytes
-    Proto.Json.empty
+    Proto.Enum
+    Proto.Error
+    Proto.Bytes
+    Proto.Field
 ```
+
+and, in a module that imports no JSON codecs, with the naming error for
+`Proto.Version.v0_1` that [install.md](install.md#versions) shows.
 
 Regenerate with the 0.2 binary, with the options used before.
 `elm-connect check` reports modules generated by another release.
@@ -745,16 +891,16 @@ that changed again before the release:
 
 | On `main` | In 0.2 |
 |---|---|
-| `encodeNoteWith registry note` (a generated encoder taking the registry, giving a `Result`) | `Proto.Json.encodeWith registry (encodeNote note)` |
-| `encodeNote note : Json.Encode.Value` | `Proto.Json.encodeTotal (encodeNote note)`, or `Proto.Json.encode (encodeNote note)` when `encodeNote` can refuse |
-| `Proto.Json.encodeAnyWith registry any` | `Proto.Json.encodeWith registry (Proto.Json.writeAny any)`, or `Proto.Any.toJson registry any` for its message's JSON alone |
-| `Proto.Json.encodeTimestamp`, `encodeDuration`, `encodeFieldMask`, `encodeStruct`, `encodeValue`, `encodeListValue` | `Proto.Json.encode (Proto.Json.writeTimestamp t)` and the other `write` helpers; `Proto.Value.toJson` writes a `Value` unchecked |
-| `Proto.Json.encodeNestedAnyWith`, `registryDeeper`, `tryObjectOfFields` and the other `try` helpers | generated code's `writeAny`, `writeDeeper`, `writeObject` and the `write` helpers |
+| `encodeNoteWith registry note` (a generated encoder taking the registry, giving a `Result`) | `Proto.Json.Encode.encodeWith registry (encodeNote note)` |
+| `encodeNote note : Json.Encode.Value` | `Proto.Json.Encode.encodeTotal (encodeNote note)`, or `Proto.Json.Encode.encode (encodeNote note)` when `encodeNote` can refuse |
+| `Proto.Json.encodeAnyWith registry any` | `Proto.Json.Encode.encodeWith registry (Proto.Json.Encode.any any)`, or `Proto.Any.toJson registry any` for its message's JSON alone |
+| `Proto.Json.encodeTimestamp`, `encodeDuration`, `encodeFieldMask`, `encodeStruct`, `encodeValue`, `encodeListValue` | `Proto.Json.Encode.encode (Proto.Json.Encode.timestamp t)` and the other checked value encoders; `Proto.Value.toJson` writes a `Value` unchecked |
+| `Proto.Json.encodeNestedAnyWith`, `registryDeeper`, `tryObjectOfFields` and the other `try` helpers | generated code's `Proto.Json.Encode.any`, `deeper`, `checkedObject` and the checked field encoders |
 | `Proto.Duration.fromParts s n` (clamped past the range) | `Proto.Duration.fromSecondsAndNanos s n : Maybe Duration`, `Nothing` past the range |
 | `Proto.Duration.toParts` | `Proto.Duration.toSecondsAndNanos`, the fields as held |
 | `Proto.Duration.fromMilliseconds`, `toMilliseconds`, `toString d : String` | `fromMillis`, `toMillis`, `toString d : Maybe String` ([Durations](#durations)) |
 | `Time.Posix` for a `Timestamp`, `Proto.Timestamp.toString t : String` | `Proto.Timestamp.Timestamp`, `toString t : Maybe String` ([Timestamps](#timestamps)) |
-| `Proto.Message.init name f …`, `Proto.Method.initJson s m (\_ -> Ok << f) …` with `f : a -> Json.Encode.Value` | `Proto.Message.init name (Proto.Json.succeed << f) …`, `Proto.Method.initJson s m (Proto.Json.succeed << f) …`, or the generated `encodeNote` |
+| `Proto.Message.init name f …`, `Proto.Method.initJson s m (\_ -> Ok << f) …` with `f : a -> Json.Encode.Value` | `Proto.Message.init name (Proto.Json.Encode.succeed << f) …`, `Proto.Method.initJson s m (Proto.Json.Encode.succeed << f) …`, or the generated `encodeNote` |
 | `Rpc.request client call : Rpc.Request` | `Rpc.request client call : Result Rpc.Error Rpc.Request` |
 | a request value with no JSON form, written wrongly and sent | refused before sending: `Rpc.Error.badValue { typeName, path, message }` (`InvalidArgument`) |
 | a route function of a `Value` body, `Free -> Proto.Route.Route` | `Free -> Json.Encode.Value -> Proto.Route.Route`, given to `Proto.Method.withJsonRoutes` (regenerate) |

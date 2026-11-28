@@ -20,7 +20,8 @@ import Maps.V1.Team
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -199,35 +200,35 @@ encodeRole value =
 
 {-| Encodes a [`Member`](#Member) as proto3 JSON.
 -}
-encodeMember : Member -> Proto.Json.Encoder x
+encodeMember : Member -> Proto.Json.Encode.Encoder x
 encodeMember value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
 
 
 {-| Encodes a [`Team`](#Team) as proto3 JSON.
 -}
-encodeTeam : Team -> Proto.Json.Encoder x
+encodeTeam : Team -> Proto.Json.Encode.Encoder x
 encodeTeam value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "labels", Proto.Json.dictField identity Json.Encode.string value.labels )
-            , ( "bySeat", Proto.Json.dictField String.fromInt Json.Encode.string value.bySeat )
-            , ( "scores", Proto.Json.dictField String.fromInt Proto.Json.encodeFloat value.scores )
-            , ( "flags", Proto.Json.dictField String.fromInt Json.Encode.bool value.flags )
-            , ( "totals", Proto.Json.dictField String.fromInt Proto.Json.encodeInt64 value.totals )
-            , ( "byId", Proto.Json.dictField identity Json.Encode.string value.byId )
-            , ( "counts", Proto.Json.dictField identity Json.Encode.int value.counts )
-            , ( "members", Proto.Json.dictField identity (\entry -> Proto.Json.encodeTotal (encodeMember entry)) value.members )
-            , ( "roles", Proto.Json.dictField String.fromInt encodeRole value.roles )
-            , ( "byFlag", Proto.Json.boolMapField Json.Encode.string value.byFlag )
-            , ( "byOffset", Proto.Json.dictField String.fromInt Json.Encode.string value.byOffset )
-            , ( "deltas", Proto.Json.dictField identity Json.Encode.string value.deltas )
-            , ( "byHash", Proto.Json.dictField identity Json.Encode.string value.byHash )
-            , ( "byStamp", Proto.Json.dictField identity Json.Encode.string value.byStamp )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            [ ( "labels", Proto.Json.Encode.dict identity Json.Encode.string value.labels )
+            , ( "bySeat", Proto.Json.Encode.dict String.fromInt Json.Encode.string value.bySeat )
+            , ( "scores", Proto.Json.Encode.dict String.fromInt Proto.Json.Encode.double value.scores )
+            , ( "flags", Proto.Json.Encode.dict String.fromInt Json.Encode.bool value.flags )
+            , ( "totals", Proto.Json.Encode.dict String.fromInt Proto.Json.Encode.int64 value.totals )
+            , ( "byId", Proto.Json.Encode.dict identity Json.Encode.string value.byId )
+            , ( "counts", Proto.Json.Encode.dict identity Json.Encode.int value.counts )
+            , ( "members", Proto.Json.Encode.dict identity (\entry -> Proto.Json.Encode.encodeTotal (encodeMember entry)) value.members )
+            , ( "roles", Proto.Json.Encode.dict String.fromInt encodeRole value.roles )
+            , ( "byFlag", Proto.Json.Encode.boolMap Json.Encode.string value.byFlag )
+            , ( "byOffset", Proto.Json.Encode.dict String.fromInt Json.Encode.string value.byOffset )
+            , ( "deltas", Proto.Json.Encode.dict identity Json.Encode.string value.deltas )
+            , ( "byHash", Proto.Json.Encode.dict identity Json.Encode.string value.byHash )
+            , ( "byStamp", Proto.Json.Encode.dict identity Json.Encode.string value.byStamp )
             ]
         )
 
@@ -240,7 +241,7 @@ encodeTeam value =
 -}
 decodeRole : Json.Decode.Decoder Role
 decodeRole =
-    Proto.Json.enum "Role"
+    Proto.Json.Decode.enum "Role"
         RoleUnspecified
         [ ( "ROLE_UNSPECIFIED", 0, RoleUnspecified )
         , ( "ROLE_OWNER", 1, RoleOwner )
@@ -251,9 +252,9 @@ decodeRole =
 -}
 decodeMember : Json.Decode.Decoder Member
 decodeMember =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Member
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 
@@ -261,22 +262,22 @@ decodeMember =
 -}
 decodeTeam : Json.Decode.Decoder Team
 decodeTeam =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Team
-            |> Proto.Json.messageField "labels" Dict.empty (Proto.Json.stringDict Proto.Json.string)
-            |> Proto.Json.messageFieldEither "bySeat" "by_seat" Dict.empty (Proto.Json.int32Dict Proto.Json.string)
-            |> Proto.Json.messageField "scores" Dict.empty (Proto.Json.uint32Dict Proto.Json.float)
-            |> Proto.Json.messageField "flags" Dict.empty (Proto.Json.int32Dict Json.Decode.bool)
-            |> Proto.Json.messageField "totals" Dict.empty (Proto.Json.uint32Dict Proto.Json.int64)
-            |> Proto.Json.messageFieldEither "byId" "by_id" Dict.empty (Proto.Json.int64Dict Proto.Json.string)
-            |> Proto.Json.messageField "counts" Dict.empty (Proto.Json.uint64Dict Proto.Json.int32)
-            |> Proto.Json.messageField "members" Dict.empty (Proto.Json.stringDict decodeMember)
-            |> Proto.Json.messageField "roles" Dict.empty (Proto.Json.int32Dict decodeRole)
-            |> Proto.Json.messageFieldEither "byFlag" "by_flag" [] (Proto.Json.boolMap Proto.Json.string)
-            |> Proto.Json.messageFieldEither "byOffset" "by_offset" Dict.empty (Proto.Json.int32Dict Proto.Json.string)
-            |> Proto.Json.messageField "deltas" Dict.empty (Proto.Json.int64Dict Proto.Json.string)
-            |> Proto.Json.messageFieldEither "byHash" "by_hash" Dict.empty (Proto.Json.uint64Dict Proto.Json.string)
-            |> Proto.Json.messageFieldEither "byStamp" "by_stamp" Dict.empty (Proto.Json.int64Dict Proto.Json.string)
+            |> Proto.Json.Decode.field "labels" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.string)
+            |> Proto.Json.Decode.fieldEither "bySeat" "by_seat" Dict.empty (Proto.Json.Decode.int32Dict Proto.Json.Decode.string)
+            |> Proto.Json.Decode.field "scores" Dict.empty (Proto.Json.Decode.uint32Dict Proto.Json.Decode.double)
+            |> Proto.Json.Decode.field "flags" Dict.empty (Proto.Json.Decode.int32Dict Json.Decode.bool)
+            |> Proto.Json.Decode.field "totals" Dict.empty (Proto.Json.Decode.uint32Dict Proto.Json.Decode.int64)
+            |> Proto.Json.Decode.fieldEither "byId" "by_id" Dict.empty (Proto.Json.Decode.int64Dict Proto.Json.Decode.string)
+            |> Proto.Json.Decode.field "counts" Dict.empty (Proto.Json.Decode.uint64Dict Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.field "members" Dict.empty (Proto.Json.Decode.stringDict decodeMember)
+            |> Proto.Json.Decode.field "roles" Dict.empty (Proto.Json.Decode.int32Dict decodeRole)
+            |> Proto.Json.Decode.fieldEither "byFlag" "by_flag" [] (Proto.Json.Decode.boolMap Proto.Json.Decode.string)
+            |> Proto.Json.Decode.fieldEither "byOffset" "by_offset" Dict.empty (Proto.Json.Decode.int32Dict Proto.Json.Decode.string)
+            |> Proto.Json.Decode.field "deltas" Dict.empty (Proto.Json.Decode.int64Dict Proto.Json.Decode.string)
+            |> Proto.Json.Decode.fieldEither "byHash" "by_hash" Dict.empty (Proto.Json.Decode.uint64Dict Proto.Json.Decode.string)
+            |> Proto.Json.Decode.fieldEither "byStamp" "by_stamp" Dict.empty (Proto.Json.Decode.int64Dict Proto.Json.Decode.string)
         )
 
 

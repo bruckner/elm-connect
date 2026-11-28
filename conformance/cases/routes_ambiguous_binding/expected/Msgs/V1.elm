@@ -19,7 +19,8 @@ import Msgs.V1.Message
 import Msgs.V1.MessageRequest
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Query
 import Proto.Registry
@@ -135,24 +136,24 @@ registry =
 
 {-| Encodes a [`MessageRequest`](#MessageRequest) as proto3 JSON.
 -}
-encodeMessageRequest : MessageRequest -> Proto.Json.Encoder x
+encodeMessageRequest : MessageRequest -> Proto.Json.Encode.Encoder x
 encodeMessageRequest value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-            , ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
-            , ( "sub", Proto.Json.implicitField "" Json.Encode.string value.sub )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
+            , ( "id", Proto.Json.Encode.implicit "" Json.Encode.string value.id )
+            , ( "sub", Proto.Json.Encode.implicit "" Json.Encode.string value.sub )
             ]
         )
 
 
 {-| Encodes a [`Message`](#Message) as proto3 JSON.
 -}
-encodeMessage : Message -> Proto.Json.Encoder x
+encodeMessage : Message -> Proto.Json.Encode.Encoder x
 encodeMessage value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
 
@@ -165,11 +166,11 @@ encodeMessage value =
 -}
 decodeMessageRequest : Json.Decode.Decoder MessageRequest
 decodeMessageRequest =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed MessageRequest
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "id" "" Proto.Json.string
-            |> Proto.Json.messageField "sub" "" Proto.Json.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "id" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "sub" "" Proto.Json.Decode.string
         )
 
 
@@ -177,9 +178,9 @@ decodeMessageRequest =
 -}
 decodeMessage : Json.Decode.Decoder Message
 decodeMessage =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Message
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 

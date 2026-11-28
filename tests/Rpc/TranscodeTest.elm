@@ -12,7 +12,7 @@ import Proto.Error
 import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Http
 import Proto.Internal.Binding
-import Proto.Json
+import Proto.Json.Encode
 import Proto.Method exposing (Method)
 import Requests exposing (builtOf, refusalOf)
 import Rpc
@@ -91,7 +91,7 @@ raw : List Rule -> Method Rpc.Json Value String
 raw bindings =
     Proto.Method.initJson "t.v1.T"
         "M"
-        (Proto.Json.succeed << identity)
+        (Proto.Json.Encode.succeed << identity)
         (\_ -> Json.Decode.field "title" Json.Decode.string)
         |> Proto.Internal.Binding.withBindings (List.map Proto.Http.binding bindings)
 
@@ -553,7 +553,7 @@ responses =
             \_ ->
                 Rpc.response transcoding
                     (Rpc.call
-                        (Proto.Method.initJson "t" "m" (Proto.Json.succeed << identity) (\_ -> Json.Decode.succeed ())
+                        (Proto.Method.initJson "t" "m" (Proto.Json.Encode.succeed << identity) (\_ -> Json.Decode.succeed ())
                             |> Proto.Internal.Binding.withBindings [ Proto.Http.binding rule ]
                         )
                         Json.Encode.null
@@ -568,7 +568,7 @@ responses =
             \_ ->
                 Rpc.response transcoding
                     (Rpc.call
-                        (Proto.Method.initJson "t" "m" (Proto.Json.succeed << identity) (\_ -> Json.Decode.field "title" Json.Decode.string)
+                        (Proto.Method.initJson "t" "m" (Proto.Json.Encode.succeed << identity) (\_ -> Json.Decode.field "title" Json.Decode.string)
                             |> Proto.Method.withRoutes [ \_ -> Debug.todo "reading an answer built the route" ]
                             |> Proto.Method.withResponseBody 0 "title"
                         )
@@ -580,7 +580,7 @@ responses =
             \_ ->
                 Rpc.response transcoding
                     (Rpc.call
-                        (Proto.Method.initJson "t" "m" (Proto.Json.succeed << identity) (\_ -> Json.Decode.field "title" Json.Decode.string)
+                        (Proto.Method.initJson "t" "m" (Proto.Json.Encode.succeed << identity) (\_ -> Json.Decode.field "title" Json.Decode.string)
                             |> Proto.Method.withJsonRoutes [ \_ _ -> Debug.todo "reading an answer built the route" ]
                             |> Proto.Method.withResponseBody 0 "title"
                         )
@@ -592,7 +592,7 @@ responses =
             \_ ->
                 Rpc.response transcoding
                     (Rpc.call
-                        (Proto.Method.initJson "t" "m" (Proto.Json.succeed << identity) (\_ -> Json.Decode.field "title" Json.Decode.string)
+                        (Proto.Method.initJson "t" "m" (Proto.Json.Encode.succeed << identity) (\_ -> Json.Decode.field "title" Json.Decode.string)
                             |> Proto.Internal.Binding.withBindings [ Proto.Http.binding rule ]
                             |> Proto.Method.withResponseBody 1 "title"
                         )

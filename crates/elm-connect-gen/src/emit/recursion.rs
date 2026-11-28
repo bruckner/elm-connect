@@ -2,7 +2,9 @@
 //! (design §3.2).
 
 use super::field::{Present, ValueShape, Zeroed};
-use super::{Deep, Emitter, FAILS, JSON_DECODE, OneofShape, PROTO_JSON, PROTO_REGISTRY, docs};
+use super::{
+    Deep, Emitter, FAILS, JSON_DECODE, OneofShape, PROTO_JSON_DECODE, PROTO_REGISTRY, docs,
+};
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type, Variant};
 use crate::elm::build::{apply, binop, int, lambda, pctor, pvar, ty, var};
 use crate::ir::{Message, TypeName, Wrapper};
@@ -109,7 +111,7 @@ impl Emitter {
     /// `elm_name`, read one level deeper: `Json.Decode.lazy (\_ ->
     /// decodeNestedNode (depth + 1))`, the lazy step keeping the memoised
     /// decoders from being needed while they are made; or
-    /// `Proto.Json.deeperWith depth (decodeNestedNodeWith types)` for a
+    /// `Proto.Json.Decode.deeperLazy depth (decodeNestedNodeWith types)` for a
     /// message that takes the registry.
     pub(super) fn deeper(&mut self, deep: Deep, elm_name: &str) -> Expr {
         let decoder = decoder_name(elm_name);
@@ -119,7 +121,7 @@ impl Emitter {
                 self.lazy(apply(var(nested(decoder)), [next]))
             }
             Deep::Built => {
-                let deeper = self.reference((PROTO_JSON, "deeperWith"));
+                let deeper = self.reference((PROTO_JSON_DECODE, "deeperLazy"));
                 let build = apply(
                     var(nested(with_registry(decoder))),
                     [var(REGISTRY_ARGUMENT)],
@@ -170,11 +172,11 @@ impl Emitter {
     /// take the depth, read one level deeper. One on a cycle:
     /// `decodeNestedTree (depth + 1)`, from its memoised decoders, which the
     /// holder's reach directly, as nothing the other reaches leads back; or
-    /// `Proto.Json.deeperWith depth (decodeNestedTreeWith types)` for one
+    /// `Proto.Json.Decode.deeperLazy depth (decodeNestedTreeWith types)` for one
     /// that takes the registry, built as the value is read. One on no
-    /// cycle: `Proto.Json.deeperWith depth decodeNestedNote`, built as the
+    /// cycle: `Proto.Json.Decode.deeperLazy depth decodeNestedNote`, built as the
     /// value is read, since a decoder made here for every path to it would
-    /// be made once per path; or `Proto.Json.deeper depth
+    /// be made once per path; or `Proto.Json.Decode.deeper depth
     /// (decodeNestedNoteWith types)` for one that takes the registry, made
     /// once as the holder's decoder is, which itself is made as it is read,
     /// as the plain codecs of such messages always were.
@@ -193,10 +195,10 @@ impl Emitter {
         };
         let recursive = self.counted.recursive(&name.proto_full_name);
         if with && !recursive {
-            let deeper = self.reference((PROTO_JSON, "deeper"));
+            let deeper = self.reference((PROTO_JSON_DECODE, "deeper"));
             apply(deeper, [var(DEPTH), build])
         } else if with || !recursive {
-            let deeper = self.reference((PROTO_JSON, "deeperWith"));
+            let deeper = self.reference((PROTO_JSON_DECODE, "deeperLazy"));
             apply(deeper, [var(DEPTH), build])
         } else {
             apply(build, [binop(BinOp::Add, var(DEPTH), int(1))])
@@ -205,10 +207,10 @@ impl Emitter {
 
     /// The decoders of a message that nests, from the decoder `body` built
     /// for the depth `depth`: under `Deep::Memo`, `decodeNode =
-    /// decodeNestedNode 1` and `decodeNestedNode = Proto.Json.memo
+    /// decodeNestedNode 1` and `decodeNestedNode = Proto.Json.Decode.memo
     /// (\depth -> body)`; under `Deep::Called`, `decodeNestedNote depth =
     /// body`; under `Deep::Built`, `decodeNodeWith types =
-    /// decodeNestedNodeWith types (Proto.Json.registryDepth types)`, which
+    /// decodeNestedNodeWith types (Proto.Json.Decode.registryDepth types)`, which
     /// is 1 at the top and counts on from an `Any` the message is read
     /// inside, and `decodeNestedNodeWith types depth = body`.
     pub(super) fn nested_decoders(
@@ -226,7 +228,7 @@ impl Emitter {
             Deep::Memo | Deep::Called => {
                 let nested_decoder = nested(decoder_name.clone());
                 let (params, body) = if deep == Deep::Memo {
-                    let memo = self.reference((PROTO_JSON, "memo"));
+                    let memo = self.reference((PROTO_JSON_DECODE, "memo"));
                     (Vec::new(), apply(memo, [lambda([pvar(DEPTH)], body)]))
                 } else {
                     (vec![pvar(DEPTH)], body)
@@ -266,7 +268,7 @@ impl Emitter {
                             [
                                 var(REGISTRY_ARGUMENT),
                                 apply(
-                                    self.reference((PROTO_JSON, "registryDepth")),
+                                    self.reference((PROTO_JSON_DECODE, "registryDepth")),
                                     [var(REGISTRY_ARGUMENT)],
                                 ),
                             ],

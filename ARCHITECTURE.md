@@ -89,8 +89,8 @@ point of `elm-format`: the corpus's formatted check and
 
 `src/` is one Elm package with two roots (§5.2):
 
-- `Proto.*` is the data: the proto3 JSON codecs (`Proto.Json`,
-  `Proto.Int64`, `Proto.Bytes`, `Proto.Timestamp`, `Proto.Duration`),
+- `Proto.*` is the data: the proto3 JSON codecs (`Proto.Json.Encode`,
+  `Proto.Json.Decode`, `Proto.Int64`, `Proto.Bytes`, `Proto.Timestamp`, `Proto.Duration`),
   the protobuf binary wire format (`Proto.Binary`),
   the typed values and descriptor trees (`Proto.Message`, `Proto.Enum`,
   `Proto.Method`, `Proto.Field`, `Proto.EnumValue`), the HTTP bindings

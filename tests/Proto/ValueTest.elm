@@ -14,7 +14,7 @@ import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Error
-import Proto.Json
+import Proto.Json.Decode
 import Proto.Value exposing (Value(..))
 import Test exposing (Test, describe, test)
 
@@ -30,7 +30,7 @@ suite =
 
 fromText : String -> Result Json.Decode.Error Value
 fromText =
-    Json.Decode.decodeString Proto.Json.value
+    Json.Decode.decodeString Proto.Json.Decode.value
 
 
 struct : List ( String, Value ) -> Value
@@ -133,7 +133,7 @@ roundTrips =
                         case fromText text of
                             Ok value ->
                                 Expect.all
-                                    [ \_ -> Json.Decode.decodeValue Proto.Json.value (Proto.Value.toJson value) |> Expect.equal (Ok value)
+                                    [ \_ -> Json.Decode.decodeValue Proto.Json.Decode.value (Proto.Value.toJson value) |> Expect.equal (Ok value)
                                     , \_ -> Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.value) (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.value) value) |> Expect.equal (Ok value)
                                     ]
                                     ()

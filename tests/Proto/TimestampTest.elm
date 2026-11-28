@@ -9,7 +9,7 @@ import Fuzzers
 import Proto.Binary as B
 import Proto.Error
 import Proto.Internal.Timestamp
-import Proto.Json
+import Proto.Json.Encode
 import Proto.Timestamp as Timestamp exposing (Timestamp)
 import Test exposing (Test, describe, fuzz, fuzz2, test)
 import Time
@@ -381,7 +381,7 @@ octets bytes =
 
 jsonRefusal : Timestamp -> Result String String
 jsonRefusal t =
-    Proto.Json.encode (Proto.Json.writeTimestamp t)
+    Proto.Json.Encode.encode (Proto.Json.Encode.timestamp t)
         |> Result.map (\_ -> "written")
         |> Result.mapError Proto.Error.toString
 

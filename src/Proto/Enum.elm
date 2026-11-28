@@ -117,7 +117,7 @@ A value has a name only when its encoder writes a JSON string. One it writes
 otherwise, such as a number for a value the proto does not declare, gives
 `""`. A generated enum holds declared values only (a value the server adds
 decodes as the zero value or fails, see
-[`Proto.Json.enum`](Proto-Json#enum)), so its every value has a name.
+[`Proto.Json.Decode.enum`](Proto-Json-Decode#enum)), so its every value has a name.
 
 -}
 toName : Enum a -> a -> String

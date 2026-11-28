@@ -31,4 +31,4 @@
   an `Any` read from proto3 JSON is sent as binary. `Proto.Binary.any`,
   without a registry, writes an `Any` holding JSON alone with its type
   URL alone and converts nothing, so a program generated with
-  `codec=binary` carries no `Proto.Json`.
+  `codec=binary` carries no proto3 JSON codecs.

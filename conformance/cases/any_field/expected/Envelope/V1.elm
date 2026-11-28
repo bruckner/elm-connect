@@ -18,7 +18,8 @@ import Proto.Any
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Error
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -125,35 +126,35 @@ registry =
 
 {-| Encodes an [`Envelope`](#Envelope) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeEnvelope : Envelope -> Proto.Json.Encoder Proto.Error.Error
+encodeEnvelope : Envelope -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeEnvelope value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
-            [ ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
+    Proto.Json.Encode.checkedObject
+        [ Proto.Json.Encode.fields
+            [ ( "id", Proto.Json.Encode.implicit "" Json.Encode.string value.id )
             ]
-        , Proto.Json.checkedFields
-            [ ( "payload", Proto.Json.writeOptional Proto.Json.writeAny value.payload )
-            , ( "attachments", Proto.Json.writeRepeated Proto.Json.writeAny value.attachments )
-            , ( "headers", Proto.Json.writeDict identity Proto.Json.writeAny value.headers )
+        , Proto.Json.Encode.checkedFields
+            [ ( "payload", Proto.Json.Encode.optional Proto.Json.Encode.any value.payload )
+            , ( "attachments", Proto.Json.Encode.checkedRepeated Proto.Json.Encode.any value.attachments )
+            , ( "headers", Proto.Json.Encode.checkedDict identity Proto.Json.Encode.any value.headers )
             ]
-        , Proto.Json.checkedFields (encodeEnvelopeBody value.body)
+        , Proto.Json.Encode.checkedFields (encodeEnvelopeBody value.body)
         ]
 
 
 {-| Encodes an [`EnvelopeBody`](#EnvelopeBody) as the members of its message's JSON object, or fails if the input contains a bad value.
 -}
-encodeEnvelopeBody : EnvelopeBody -> List ( String, Proto.Json.Field Proto.Error.Error )
+encodeEnvelopeBody : EnvelopeBody -> List ( String, Proto.Json.Encode.Field Proto.Error.Error )
 encodeEnvelopeBody value =
     case value of
         EnvelopeBodyUnset ->
             []
 
         EnvelopeBodyPacked member ->
-            [ ( "packed", Proto.Json.writeMember (Proto.Json.writeAny member) )
+            [ ( "packed", Proto.Json.Encode.member (Proto.Json.Encode.any member) )
             ]
 
         EnvelopeBodyText member ->
-            [ ( "text", Proto.Json.writeMember (Proto.Json.succeed (Json.Encode.string member)) )
+            [ ( "text", Proto.Json.Encode.member (Proto.Json.Encode.succeed (Json.Encode.string member)) )
             ]
 
 
@@ -165,20 +166,20 @@ encodeEnvelopeBody value =
 -}
 decodeEnvelopeWith : Proto.Registry.Registry -> Json.Decode.Decoder Envelope
 decodeEnvelopeWith types =
-    decodeNestedEnvelopeWith types (Proto.Json.registryDepth types)
+    decodeNestedEnvelopeWith types (Proto.Json.Decode.registryDepth types)
 
 
 {-| [`decodeEnvelopeWith`](#decodeEnvelopeWith) for an [`Envelope`](#Envelope) held `depth` levels deep.
 -}
 decodeNestedEnvelopeWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Envelope
 decodeNestedEnvelopeWith types depth =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Envelope
-            |> Proto.Json.messageField "id" "" Proto.Json.string
-            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (Proto.Json.nestedAnyWith depth types))
-            |> Proto.Json.messageField "attachments" [] (Json.Decode.list (Proto.Json.nestedAnyWith depth types))
-            |> Proto.Json.messageField "headers" Dict.empty (Proto.Json.stringDict (Proto.Json.nestedAnyWith depth types))
-            |> Proto.Json.oneof (decodeNestedEnvelopeBodyWith types depth)
+            |> Proto.Json.Decode.field "id" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "payload" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedAny depth types))
+            |> Proto.Json.Decode.field "attachments" [] (Json.Decode.list (Proto.Json.Decode.nestedAny depth types))
+            |> Proto.Json.Decode.field "headers" Dict.empty (Proto.Json.Decode.stringDict (Proto.Json.Decode.nestedAny depth types))
+            |> Proto.Json.Decode.oneof (decodeNestedEnvelopeBodyWith types depth)
         )
 
 
@@ -186,17 +187,17 @@ decodeNestedEnvelopeWith types depth =
 -}
 decodeEnvelopeBodyWith : Proto.Registry.Registry -> Json.Decode.Decoder EnvelopeBody
 decodeEnvelopeBodyWith types =
-    decodeNestedEnvelopeBodyWith types (Proto.Json.registryDepth types)
+    decodeNestedEnvelopeBodyWith types (Proto.Json.Decode.registryDepth types)
 
 
 {-| [`decodeEnvelopeBodyWith`](#decodeEnvelopeBodyWith) for an [`EnvelopeBody`](#EnvelopeBody) held `depth` levels deep.
 -}
 decodeNestedEnvelopeBodyWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder EnvelopeBody
 decodeNestedEnvelopeBodyWith types depth =
-    Proto.Json.members "body"
+    Proto.Json.Decode.members "body"
         EnvelopeBodyUnset
-        [ Proto.Json.member "packed" (Json.Decode.map EnvelopeBodyPacked (Proto.Json.nestedAnyWith depth types))
-        , Proto.Json.member "text" (Json.Decode.map EnvelopeBodyText Proto.Json.string)
+        [ Proto.Json.Decode.member "packed" (Json.Decode.map EnvelopeBodyPacked (Proto.Json.Decode.nestedAny depth types))
+        , Proto.Json.Decode.member "text" (Json.Decode.map EnvelopeBodyText Proto.Json.Decode.string)
         ]
 
 

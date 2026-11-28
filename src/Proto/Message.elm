@@ -43,7 +43,7 @@ import Proto.Internal.Binary
 import Proto.Internal.JsonError as JsonError
 import Proto.Internal.Message as Internal
 import Proto.Internal.Registry as Registry exposing (Registry)
-import Proto.Json
+import Proto.Json.Encode
 
 
 {-| A message type whose Elm values are `a`, with both its codecs: proto3 JSON
@@ -68,10 +68,10 @@ A message built by `init` is taken at its word that it holds no `Any`:
 looking for an `Any` that only JSON could carry (see [`initWith`](#initWith)).
 
 -}
-init : String -> (a -> Proto.Json.Encoder Proto.Error.Error) -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder a -> Message a
+init : String -> (a -> Proto.Json.Encode.Encoder Proto.Error.Error) -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder a -> Message a
 init name jsonEncoder jsonDecoder binaryEncoder binaryDecoder =
     Internal.Message name
-        { encodeJson = \registry value -> Proto.Json.encodeWith registry (jsonEncoder value)
+        { encodeJson = \registry value -> Proto.Json.Encode.encodeWith registry (jsonEncoder value)
         , decodeJson = \_ -> jsonDecoder
         , encodeBinary = binaryEncoder
         , decodeBinary = binaryDecoder
@@ -90,10 +90,10 @@ registry (`UnregisteredType`), or its binary is not that type's message
         Proto.Message.initWith "notes.v1.Envelope" encodeEnvelope decodeEnvelopeWith encodeEnvelopeBinary decodeEnvelopeBinary
 
 -}
-initWith : String -> (a -> Proto.Json.Encoder Proto.Error.Error) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder a -> Message a
+initWith : String -> (a -> Proto.Json.Encode.Encoder Proto.Error.Error) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder a -> Message a
 initWith name jsonEncoder jsonDecoder binaryEncoder binaryDecoder =
     Internal.Message name
-        { encodeJson = \registry value -> Proto.Json.encodeWith registry (jsonEncoder value)
+        { encodeJson = \registry value -> Proto.Json.Encode.encodeWith registry (jsonEncoder value)
         , decodeJson = jsonDecoder
         , encodeBinary = binaryEncoder
         , decodeBinary = binaryDecoder

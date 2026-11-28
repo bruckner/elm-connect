@@ -8,7 +8,8 @@ import Proto.Any as Any
 import Proto.Duration as Duration
 import Proto.Error
 import Proto.ErrorDetails as ErrorDetails
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Registry as Registry
 import Proto.WellKnown
 import Test exposing (Test, describe, test)
@@ -34,9 +35,9 @@ suite =
                 , """{"@type":"type.googleapis.com/google.rpc.Help.Link","description":"docs","url":"https://example.com"}"""
                 ]
                     |> List.map
-                        (Json.Decode.decodeString (Proto.Json.anyWith ErrorDetails.registry)
+                        (Json.Decode.decodeString (Proto.Json.Decode.any ErrorDetails.registry)
                             >> Result.mapError Json.Decode.errorToString
-                            >> Result.andThen (Proto.Json.writeAny >> Proto.Json.encodeWith ErrorDetails.registry >> Result.mapError (\_ -> "unwritable"))
+                            >> Result.andThen (Proto.Json.Encode.any >> Proto.Json.Encode.encodeWith ErrorDetails.registry >> Result.mapError (\_ -> "unwritable"))
                             >> Result.map (Json.Encode.encode 0)
                         )
                     |> Expect.equal
@@ -46,11 +47,11 @@ suite =
                         ]
         , test "the registry holds no well-known type" <|
             \_ ->
-                Proto.Json.encodeWith ErrorDetails.registry (Proto.Json.writeAny (Any.pack Proto.WellKnown.duration (Duration.fromMillis 1)))
+                Proto.Json.Encode.encodeWith ErrorDetails.registry (Proto.Json.Encode.any (Any.pack Proto.WellKnown.duration (Duration.fromMillis 1)))
                     |> Expect.equal (Err (Proto.Error.UnregisteredType "type.googleapis.com/google.protobuf.Duration"))
         , test "a RetryInfo's delay unpacks" <|
             \_ ->
-                Json.Decode.decodeString (Proto.Json.anyWith (Registry.union ErrorDetails.registry Registry.empty)) """{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"2s"}"""
+                Json.Decode.decodeString (Proto.Json.Decode.any (Registry.union ErrorDetails.registry Registry.empty)) """{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"2s"}"""
                     |> Result.toMaybe
                     |> Maybe.andThen (Any.unpack ErrorDetails.retryInfo)
                     |> Maybe.andThen .retryDelay

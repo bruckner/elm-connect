@@ -6,7 +6,7 @@ import Json.Encode
 import Notes.V1 exposing (Note, NoteKind(..))
 import Notes.V1.UpdateNoteRequest
 import Proto.Duration
-import Proto.Json
+import Proto.Json.Encode
 import Proto.Timestamp
 import Snippets.UpdateMask exposing (updateMask, validMask)
 import Test exposing (Test, describe, test)
@@ -37,7 +37,7 @@ noteMask : Note -> Note -> List String
 noteMask before after =
     updateMask Notes.V1.descriptors
         Notes.V1.messageUpdateNoteRequest
-        (Notes.V1.encodeUpdateNoteRequest >> Proto.Json.encodeWith Notes.V1.registry >> Result.withDefault Json.Encode.null)
+        (Notes.V1.encodeUpdateNoteRequest >> Proto.Json.Encode.encodeWith Notes.V1.registry >> Result.withDefault Json.Encode.null)
         { note = Just before, updateMask = Nothing }
         { note = Just after, updateMask = Nothing }
 
@@ -73,7 +73,7 @@ suite =
             \_ ->
                 updateMask Notes.V1.descriptors
                     Notes.V1.messageUpdateNoteRequest
-                    (Notes.V1.encodeUpdateNoteRequest >> Proto.Json.encodeWith Notes.V1.registry >> Result.withDefault Json.Encode.null)
+                    (Notes.V1.encodeUpdateNoteRequest >> Proto.Json.Encode.encodeWith Notes.V1.registry >> Result.withDefault Json.Encode.null)
                     { note = Nothing, updateMask = Nothing }
                     { note = Just note, updateMask = Nothing }
                     |> Expect.equal [ "note" ]

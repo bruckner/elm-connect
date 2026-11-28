@@ -262,7 +262,7 @@ columns =
 
 
 {-| An optional Value is the same Maybe; its JSON name differs, so it
-decodes with messageNullFieldEither. A map of Value holds it bare.
+decodes with nullFieldEither. A map of Value holds it bare.
 
 `optional google.protobuf.Value last_value = 31;`
 

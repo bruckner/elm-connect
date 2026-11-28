@@ -16,7 +16,8 @@ import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -140,13 +141,13 @@ encodeShade value =
 
 {-| Encodes a [`Remote`](#Remote) as proto3 JSON.
 -}
-encodeRemote : Remote -> Proto.Json.Encoder x
+encodeRemote : Remote -> Proto.Json.Encode.Encoder x
 encodeRemote value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
-            , ( "shade", Proto.Json.implicitField ShadeUnspecified encodeShade value.shade )
-            , ( "version", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.version )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.object
+            [ ( "id", Proto.Json.Encode.implicit "" Json.Encode.string value.id )
+            , ( "shade", Proto.Json.Encode.implicit ShadeUnspecified encodeShade value.shade )
+            , ( "version", Proto.Json.Encode.implicit "0" Proto.Json.Encode.int64 value.version )
             ]
         )
 
@@ -159,7 +160,7 @@ encodeRemote value =
 -}
 decodeShade : Json.Decode.Decoder Shade
 decodeShade =
-    Proto.Json.enum "Shade"
+    Proto.Json.Decode.enum "Shade"
         ShadeUnspecified
         [ ( "SHADE_UNSPECIFIED", 0, ShadeUnspecified )
         , ( "SHADE_LIGHT", 1, ShadeLight )
@@ -171,11 +172,11 @@ decodeShade =
 -}
 decodeRemote : Json.Decode.Decoder Remote
 decodeRemote =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Remote
-            |> Proto.Json.messageField "id" "" Proto.Json.string
-            |> Proto.Json.messageField "shade" ShadeUnspecified decodeShade
-            |> Proto.Json.messageField "version" "0" Proto.Json.int64
+            |> Proto.Json.Decode.field "id" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "shade" ShadeUnspecified decodeShade
+            |> Proto.Json.Decode.field "version" "0" Proto.Json.Decode.int64
         )
 
 
