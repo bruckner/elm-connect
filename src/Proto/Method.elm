@@ -64,7 +64,6 @@ import Proto.Codec
 import Proto.Error
 import Proto.Http exposing (Binding)
 import Proto.Internal.Binding
-import Proto.Internal.Interpret
 import Proto.Internal.Method as Internal
 import Proto.Internal.Writer as Writer
 import Proto.Json.Encoder
@@ -274,7 +273,7 @@ withBindings methodBindings (Internal.Method m) =
             | routes =
                 List.map
                     (\(Proto.Internal.Binding.Binding rule) ->
-                        { shape = Internal.FromJson (\_ json -> Proto.Internal.Interpret.route rule json)
+                        { shape = Internal.FromJson (\_ json -> Proto.Internal.Binding.route rule json)
                         , responseBody = rule.responseBody
                         }
                     )

@@ -348,7 +348,7 @@ rpc shared call =
   `Rpc`, read by `Rpc.Trace`; `Rpc.Internal.Protocol` and
   `Rpc.Internal.Client`, built by `Rpc.Protocol` and `Rpc.Client` and
   read by `Rpc`; `Rpc.Internal.Retry`; `Proto.Internal.Binding`, built by
-  `Proto.Http` and read by `Proto.Internal.Interpret`, the interpreter
+  `Proto.Http`, which also holds the interpreter
   `Proto.Method.withBindings` reaches; `Proto.Internal.Any`;
   `Proto.Internal.Duration` and `Proto.Internal.Timestamp`, which the
   binary reader builds and the JSON writer and `Proto.Route` print,
@@ -2687,7 +2687,7 @@ binding whose rule names a `response_body`:
   resolver accepts that the emitter cannot type is a bug, reported as
   `internal::untyped_route`. A method written by hand gives its own
   `Proto.Http` bindings to `withBindings`, which the runtime's
-  interpreter (`Proto.Internal.Interpret`) reads over the same JSON into
+  interpreter (`Proto.Internal.Binding`) reads over the same JSON into
   the same route; only a program naming `withBindings` carries the
   interpreter, and no generated method names it.
 - **The implicit route.** A method without a rule has no routes and
