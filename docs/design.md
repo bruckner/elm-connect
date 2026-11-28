@@ -1056,7 +1056,7 @@ just the form encoders write.
   "displayName" or "display_name", but got both`), even when one of them
   is `null`: protobuf's own parsers (protobuf-go's protojson) reject it
   as a duplicate field. The same holds for every two-name
-  helper (`memberEither`, `emptyMemberEither`,
+  helper (`memberEither`,
   `nestedValueMemberEither`, `nullValueMemberEither`,
   `nestedMessageValueFieldEither`). The
   two names are equal only for one-word fields without an explicit
@@ -1295,7 +1295,8 @@ In detail:
   member of it is a constructor without an argument (`ActionClear`, not
   `ActionClear ()`), encoded as `{"clear": {}}` and decoded from the
   member's key holding an object; a member present as `null` reads as
-  unset, as for any member (`Proto.Json.emptyMember`). Whether such a field was sent is lost
+  unset, as for any member (a `Proto.Json.member` mapping
+  `Proto.Json.empty` onto the constructor). Whether such a field was sent is lost
   (§3.8).
 - `NullValue`, the enum whose one value `NULL_VALUE` proto3 JSON writes
   as `null`, is `()` as `Empty` is, and for the same reason: it carries
@@ -1552,8 +1553,9 @@ In detail:
     as a duplicate (§3.4).
 - A member of `google.protobuf.Empty` is a constructor without an
   argument (`NoteEventKindArchived`), encoded as `{"archived": {}}` and
-  decoded by `Proto.Json.emptyMember`, which reads the key as set when
-  it holds an object; `null` reads as unset, as for any member, and any
+  decoded by a `Proto.Json.member` step of `Json.Decode.map (\() ->
+  NoteEventKindArchived) Proto.Json.empty`, which reads the key as set
+  when it holds an object; `null` reads as unset, as for any member, and any
   other value fails (§3.5).
 - `members` reads the members together: `Json.Decode.oneOf` over them
   cannot see two members at once, and would let a malformed member

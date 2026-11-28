@@ -5,8 +5,8 @@ use super::Deep;
 use super::field::{ValueShape, Zeroed};
 use super::recursion::DEPTH;
 use super::{Emitter, FAILS, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_ERROR, PROTO_JSON, docs};
-use crate::elm::ast::{Decl, Expr, Type, Variant};
-use crate::elm::build::{apply, case, list, pctor, pvar, string, ty, ty_fn, var};
+use crate::elm::ast::{Decl, Expr, Pattern, Type, Variant};
+use crate::elm::build::{apply, case, lambda, list, pctor, pvar, string, ty, ty_fn, var};
 use crate::ir::{Message, ModuleName};
 use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY_ARGUMENT, with_registry};
 
@@ -155,9 +155,9 @@ impl Emitter {
     /// Each step is `Proto.Json.member`, or `memberEither` when the JSON
     /// and proto names differ, with the member's decoder mapped onto its
     /// constructor; a member that closes a cycle decodes through
-    /// `Json.Decode.lazy`. A member of `google.protobuf.Empty` is an
-    /// `emptyMember` step given its constructor, read as set when its key
-    /// holds an object. A member of `google.protobuf.Value` is a
+    /// `Json.Decode.lazy`. A member of `google.protobuf.Empty`, whose
+    /// constructor carries nothing, maps `Proto.Json.empty` onto it, so it
+    /// is set when its key holds an object. A member of `google.protobuf.Value` is a
     /// `nestedValueMember` step given the depth and its constructor, for
     /// which `null` is set, as protobuf's parsers read it; its message nests,
     /// so the oneof's decoders always take the depth. A member of
@@ -185,7 +185,11 @@ impl Emitter {
                 let ctor = var(variant.elm_ctor.clone());
                 let mut args = Vec::new();
                 let (helper, arg) = match value {
-                    ValueShape::Zeroed(Zeroed::Empty) => ("emptyMember", ctor),
+                    ValueShape::Zeroed(Zeroed::Empty) => {
+                        let map = self.reference((JSON_DECODE, "map"));
+                        let empty = self.reference((PROTO_JSON, "empty"));
+                        ("member", apply(map, [lambda([Pattern::Unit], ctor), empty]))
+                    }
                     ValueShape::Zeroed(Zeroed::Json) if deep.is_some() => {
                         args.push(var(DEPTH));
                         ("nestedValueMember", ctor)

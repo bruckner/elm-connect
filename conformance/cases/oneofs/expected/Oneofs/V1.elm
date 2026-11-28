@@ -396,8 +396,8 @@ decodeNoteEventKind =
         , Proto.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map NoteEventKindTitleChanged Proto.Json.string)
         , Proto.Json.member "recolored" (Json.Decode.map NoteEventKindRecolored decodeColor)
         , Proto.Json.memberEither "deletedAt" "deleted_at" (Json.Decode.map NoteEventKindDeletedAt Proto.Json.int64)
-        , Proto.Json.emptyMember "archived" NoteEventKindArchived
-        , Proto.Json.emptyMemberEither "clearedAll" "cleared_all" NoteEventKindClearedAll
+        , Proto.Json.member "archived" (Json.Decode.map (\() -> NoteEventKindArchived) Proto.Json.empty)
+        , Proto.Json.memberEither "clearedAll" "cleared_all" (Json.Decode.map (\() -> NoteEventKindClearedAll) Proto.Json.empty)
         ]
 
 

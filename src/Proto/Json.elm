@@ -9,7 +9,7 @@ module Proto.Json exposing
     , totalOptionalField, totalRepeatedField, totalDictField, totalBoolMapField
     , memo, deeper, deeperWith
     , oneof, members, Member, member, memberEither
-    , emptyMember, emptyMemberEither, nestedValueMember, nestedValueMemberEither
+    , nestedValueMember, nestedValueMemberEither
     , nullValueMember, nullValueMemberEither
     , enum, enumOrZero
     , stringDict, int32Dict, uint32Dict, int64Dict, uint64Dict, boolMap
@@ -152,7 +152,7 @@ the limit a decoder fails with "Expecting messages nested at most 100 deep".
 # Oneofs
 
 @docs oneof, members, Member, member, memberEither
-@docs emptyMember, emptyMemberEither, nestedValueMember, nestedValueMemberEither
+@docs nestedValueMember, nestedValueMemberEither
 @docs nullValueMember, nullValueMemberEither
 
 
@@ -949,6 +949,12 @@ reads as absent.
 
     member "text" (Json.Decode.map NoteKindText string)
 
+A member of type `google.protobuf.Empty`, whose constructor carries nothing,
+maps [`empty`](#empty) onto it: it is present when its key holds an object
+(usually `{}`), and any value but `null` or an object fails.
+
+    member "clear" (Json.Decode.map (\() -> ActionKindClear) empty)
+
 -}
 member : String -> Decoder a -> Member a
 member name =
@@ -962,32 +968,6 @@ name: the JSON name first, then the proto name, as in
 memberEither : String -> String -> Decoder a -> Member a
 memberEither jsonName protoName decoder =
     Member { names = spellings jsonName protoName, nullIsSet = False, decoder = decoder }
-
-
-{-| A member of type `google.protobuf.Empty`, whose constructor carries
-nothing: present when its key holds an object (usually `{}`). `null` reads as
-absent, and any other value fails.
-
-    type ActionKind
-        = ActionKindUnset
-        | ActionKindClear
-
-    decodeActionKind : Decoder ActionKind
-    decodeActionKind =
-        members "kind" ActionKindUnset [ emptyMember "clear" ActionKindClear ]
-
--}
-emptyMember : String -> a -> Member a
-emptyMember name =
-    emptyMemberEither name name
-
-
-{-| [`emptyMember`](#emptyMember) for a member whose JSON name differs from its
-proto name: the JSON name first, then the proto name.
--}
-emptyMemberEither : String -> String -> a -> Member a
-emptyMemberEither jsonName protoName constructor =
-    memberEither jsonName protoName (Json.Decode.map (\_ -> constructor) empty)
 
 
 {-| A member of type `google.protobuf.Value`, given its constructor, for a

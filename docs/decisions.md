@@ -2889,6 +2889,21 @@ A hand-written decoder wraps its steps in `message` and reads its
 fields with `messageField`, `messageFieldEither` and the `nested`
 forms at depth 0. Where: design §3.1, §3.4, §3.5, §3.6.
 
+### Specialised `Proto.Json` names collapsed
+
+*2026-11-27.*
+
+Where a specialised `Proto.Json` name's body was already the general
+form applied to fixed arguments, the name is gone and generated code
+writes the general form.
+
+- `emptyMember` and `emptyMemberEither` were `member` and `memberEither`
+  of `Json.Decode.map (\() -> constructor) empty`. Generated code writes
+  that decoder, built where the member list is built, as the helper
+  built it: the optimised JavaScript is the same but for names.
+
+Where: design §3.5, §3.6.
+
 ### Binary codecs, faster within elm/bytes
 
 *2026-11-13; 2026-11-19; 2026-11-20.*

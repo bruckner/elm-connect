@@ -1504,7 +1504,7 @@ decodeNestedChoicePick depth =
         , Proto.Json.member "data" (Json.Decode.map ChoicePickData Proto.Json.bytes)
         , Proto.Json.member "kind" (Json.Decode.map ChoicePickKind decodeKind)
         , Proto.Json.member "leaf" (Json.Decode.map ChoicePickLeaf decodeLeaf)
-        , Proto.Json.emptyMember "nothing" ChoicePickNothing
+        , Proto.Json.member "nothing" (Json.Decode.map (\() -> ChoicePickNothing) Proto.Json.empty)
         , Proto.Json.nestedValueMember "json" depth ChoicePickJson
         , Proto.Json.member "at" (Json.Decode.map ChoicePickAt Proto.Json.timestamp)
         , Proto.Json.member "wrapped" (Json.Decode.map ChoicePickWrapped Proto.Json.int32)

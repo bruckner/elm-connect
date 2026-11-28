@@ -505,7 +505,7 @@ decodeEventKind =
         EventKindUnset
         [ Proto.Json.member "text" (Json.Decode.map EventKindText Json.Decode.string)
         , Proto.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map EventKindTitleChanged Json.Decode.string)
-        , Proto.Json.emptyMemberEither "clearedAll" "cleared_all" EventKindCleared
+        , Proto.Json.memberEither "clearedAll" "cleared_all" (Json.Decode.map (\() -> EventKindCleared) Proto.Json.empty)
         , Proto.Json.nestedValueMember "payload" 0 EventKindPayload
         , Proto.Json.nullValueMemberEither "nothingAtAll" "nothing_at_all" EventKindNothing
         ]
@@ -558,11 +558,11 @@ oneofTests =
                     "Expecting \"titleChanged\" or \"title_changed\", but got both"
         , test "a member under both its names fails even when one is null" <|
             \_ -> fails decodeEvent """{"titleChanged":"x","title_changed":null}"""
-        , test "emptyMember reads {}" <|
+        , test "an Empty member reads {}" <|
             \_ -> decodes decodeEvent """{"cleared_all":{}}""" (Event "" EventKindCleared)
-        , test "emptyMember reads null as unset" <|
+        , test "an Empty member reads null as unset" <|
             \_ -> decodes decodeEvent """{"clearedAll":null}""" (Event "" EventKindUnset)
-        , test "emptyMember fails on a value that is not an object" <|
+        , test "an Empty member fails on a value that is not an object" <|
             \_ -> fails decodeEvent """{"clearedAll":1}"""
         , test "nestedValueMember holds any JSON" <|
             \_ -> decodes decodeEvent """{"payload":[1]}""" (Event "" (EventKindPayload (Proto.Value.ValueList [ Proto.Value.ValueNumber 1 ])))
