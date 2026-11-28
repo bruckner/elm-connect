@@ -280,6 +280,11 @@ url = "https://nodejs.org/dist/v24.21.0/node-v24.21.0-darwin-arm64.tar.gz"
 checksum = "sha256:1462cb3b3046b815cf8ea436d3da450ec1a9f11dac7e5a46b0ada5305d7e8097"
 url = "https://nodejs.org/dist/v24.21.0/node-v24.21.0-darwin-x64.tar.gz"
 
+[[tools."npm:elm-review"]]
+version = "2.13.5"
+backend = "npm:elm-review"
+specifiers = ["2.13.5"]
+
 [[tools."npm:elm-test-rs"]]
 version = "3.2.0-0"
 backend = "npm:elm-test-rs"

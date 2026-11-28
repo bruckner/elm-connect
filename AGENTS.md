@@ -50,6 +50,10 @@ and macOS. In order:
   replay of the corpus, the lockstep test and the diagnostics catalogue.
 - `elm-check`: the runtime built with `--docs` (every exposed value
   documented), its Elm tests, and the notes example's Elm tests.
+- `elm-review`: elm-review over the runtime and its tests (`review/`):
+  unused imports, bindings, parameters, patterns, constructors,
+  dependencies and Internal-module exports. An export an Internal module
+  keeps for a test counts as used; generated modules are not reviewed.
 - `error-details-check`: the hand-written `Proto.ErrorDetails` compiled
   and tested beside the generator's `google/rpc/error_details.proto`
   under the default `wire=both`; on a failure, port the difference from the

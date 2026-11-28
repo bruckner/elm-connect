@@ -12,15 +12,14 @@ import Proto.Error
 import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Http
 import Proto.Json
-import Proto.Method exposing (Idempotency(..), Method)
-import Proto.Registry
+import Proto.Method exposing (Method)
 import Requests exposing (builtOf, refusalOf)
 import Rpc
 import Rpc.Body
 import Rpc.Call
 import Rpc.Client
 import Rpc.Code exposing (Code(..))
-import Rpc.Error exposing (Cause(..), Error, Source(..))
+import Rpc.Error exposing (Error, Source(..))
 import Rpc.Internal.Plan
 import Rpc.Protocol
 import Test exposing (Test, describe, test)

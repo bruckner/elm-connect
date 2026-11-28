@@ -17,7 +17,6 @@ import Notes.V1.NotesService as Notes
 import Proto.Any
 import Proto.Error
 import Proto.ErrorDetails
-import Proto.Json
 import Proto.Message
 import Rpc
 import Rpc.Body

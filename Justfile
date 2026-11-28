@@ -1,10 +1,10 @@
 # Recipes for working on elm-connect. `just` lists them.
 
-# Elm sources elm-format owns: the runtime package, its tests, the live
-# runner, the browser example with its tests, and the Eliza example. The conformance corpus is checked by its own test (`cargo test
+# Elm sources elm-format owns: the runtime package, its tests, the elm-review
+# configuration, the live runner, the browser example with its tests, and the Eliza example. The conformance corpus is checked by its own test (`cargo test
 # --test conformance`), which runs `elm-format --validate` over the expected
 # output.
-elm_dirs := "src tests conformance/error-details/tests conformance/live/src conformance/protobuf/src examples/notes/elm/src examples/notes/elm/tests examples/eliza/src"
+elm_dirs := "src tests review/src conformance/error-details/tests conformance/live/src conformance/protobuf/src examples/notes/elm/src examples/notes/elm/tests examples/eliza/src"
 
 # Cargo's build directory, which the live suite's binaries share
 # (target/live). CARGO_TARGET_DIR moves it, as it does for cargo; never
@@ -16,7 +16,7 @@ default:
     @just --list
 
 # The gate: everything CI runs, in order.
-check: fmt-check clippy test elm-check json-only-check error-details-check snippets changelog-check release-check zizmor gitleaks deny license package
+check: fmt-check clippy test elm-check elm-review json-only-check error-details-check snippets changelog-check release-check zizmor gitleaks deny license package
 
 # Format Rust and Elm sources in place.
 fmt:
@@ -136,6 +136,14 @@ elm-check: tests-gen
     cd examples/notes/elm && elm-test-rs
     -@cd examples/eliza && elm make >/dev/null 2>&1
     cd examples/eliza && elm make src/Main.elm --output=/dev/null
+
+# Review the runtime package and its tests with elm-review (review/): imports,
+# bindings, parameters, patterns, constructors and Internal-module exports
+# nothing uses, and unused dependencies. The tests import tests/Generated,
+# so it is written first (tests-gen); the review does not report on it. The
+# first run downloads the review configuration's packages into ~/.elm.
+elm-review: tests-gen
+    elm-review
 
 # Write the Elm the tests import under tests/Generated (gitignored): the
 # codec round trips' (the modules generated from conformance/codec under

@@ -2,7 +2,6 @@ module Rpc.CodecTest exposing (suite)
 
 import Answers exposing (heldAnswer, metadata)
 import Bytes exposing (Bytes)
-import Bytes.Decode
 import Bytes.Encode
 import Dict
 import Expect
@@ -14,7 +13,7 @@ import Octets exposing (bytesOf)
 import Proto.Bytes
 import Proto.Error
 import Proto.Registry
-import Requests exposing (refusalOf, requestOf)
+import Requests exposing (requestOf)
 import Rpc
 import Rpc.Body
 import Rpc.Call

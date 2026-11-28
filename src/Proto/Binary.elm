@@ -91,7 +91,7 @@ Code generated with `unknown_fields=keep` reads and writes a message's
 
 -}
 
-import Array exposing (Array)
+import Array
 import Bitwise
 import Bytes exposing (Bytes, Endianness(..))
 import Bytes.Decode as D exposing (Step(..))

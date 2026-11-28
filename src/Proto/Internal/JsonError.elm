@@ -1,4 +1,4 @@
-module Proto.Internal.JsonError exposing (nestsDeeperThan, scrub)
+module Proto.Internal.JsonError exposing (scrub)
 
 {-| A JSON read's error made safe to print: elm/json keeps, in each
 `Failure`, the JSON the failing decoder ran on, which can be nested

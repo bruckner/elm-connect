@@ -12,7 +12,6 @@ import Rpc
 import Rpc.Call
 import Rpc.Client
 import Rpc.Code
-import Rpc.Error
 import Rpc.Protocol
 import Rpc.Retry
 import Task

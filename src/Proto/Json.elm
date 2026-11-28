@@ -1230,7 +1230,7 @@ names decode to it. When two rows share a name or a number, the first wins.
 enum : String -> a -> List ( String, Int, a ) -> Decoder a
 enum enumName zero values =
     enumWith
-        (\text -> Json.Decode.fail ("Expecting a value of enum " ++ quote enumName))
+        (\_ -> Json.Decode.fail ("Expecting a value of enum " ++ quote enumName))
         zero
         values
 
@@ -1406,7 +1406,7 @@ insertKeys readKey seen entries pairs =
 
                 Ok key ->
                     case Dict.get key seen of
-                        Just earlier ->
+                        Just _ ->
                             Err "Expecting distinct map keys"
 
                         Nothing ->
@@ -1547,7 +1547,7 @@ string read as [`int64`](#int64) reads one.
 boundedInt : String -> Int -> Int -> Decoder Int
 boundedInt what low high =
     let
-        outOfRange form =
+        outOfRange =
             Json.Decode.fail ("Expecting " ++ what)
     in
     numeric
@@ -1561,7 +1561,7 @@ boundedInt what low high =
 
                             Ok number ->
                                 if number < toFloat low || number > toFloat high then
-                                    outOfRange form
+                                    outOfRange
 
                                 else
                                     Json.Decode.succeed (round number)
@@ -1572,7 +1572,7 @@ boundedInt what low high =
                                 Json.Decode.succeed int
 
                             Err OutOfRange ->
-                                outOfRange form
+                                outOfRange
 
                             Err _ ->
                                 Json.Decode.fail "Expecting an integer"

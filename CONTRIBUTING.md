@@ -21,8 +21,8 @@ documentation fix or a test can go straight to a pull request.
 ## Getting set up
 
 [`mise.toml`](mise.toml) pins the whole toolchain: Rust, Elm,
-elm-format, elm-test-rs, node, just, zizmor, gitleaks and cargo-deny,
-and Go, buf and func-e (which fetches Envoy) for the live suite. The Rust it pins is also the
+elm-format, elm-test-rs, elm-review, node, just, zizmor, gitleaks and
+cargo-deny, and Go, buf and func-e (which fetches Envoy) for the live suite. The Rust it pins is also the
 workspace's minimum supported Rust version (`rust-version`): the MSRV
 is the pinned toolchain, a pull request that moves the pin moves the
 MSRV with it, and its release note says so. From the repository root:
@@ -35,9 +35,9 @@ just check      # run the gate
 `just` with no arguments lists every recipe.
 
 [`mise.lock`](mise.lock) records each tool's exact version and, for
-every tool but Rust (which rustup verifies) and elm-test-rs (an npm
-package), the URL and SHA-256 of its download on Linux and macOS, x64
-and arm64; mise refuses a download that does not match. After moving a
+every tool but Rust (which rustup verifies) and the npm packages
+(elm-test-rs, elm-review), the URL and SHA-256 of its download on Linux
+and macOS, x64 and arm64; mise refuses a download that does not match. After moving a
 pin in `mise.toml`, run `mise lock` (with `GITHUB_TOKEN` set, or
 GitHub's API rate limit leaves entries out) and commit both files; CI installs
 with the mise release named in `.github/workflows/ci.yml`, so move that
@@ -62,7 +62,9 @@ rewrite the corpus with output that is not its own.
 --validate`), `cargo clippy` with warnings as errors, the Rust tests
 (the conformance corpus among them, see
 [`conformance/README.md`](conformance/README.md)), the runtime
-package's build and Elm tests, a comparison of the hand-written
+package's build and Elm tests, an [elm-review](https://package.elm-lang.org/packages/jfmengels/elm-review/latest/)
+pass over the runtime and its tests for unused code (`just elm-review`,
+configured in `review/`), a comparison of the hand-written
 `Proto.ErrorDetails` with what the generator gives for
 `google/rpc/error_details.proto` (`just error-details-check`; when it
 fails, port the difference from the generated module by hand, as

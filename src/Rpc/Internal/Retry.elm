@@ -1,4 +1,4 @@
-module Rpc.Internal.Retry exposing (Math, Moment, Outcome, Policy, Retry(..), attemptTimeout, budget, delay, jitter, math, maxDelay, retryable, run, startBudget, step, wait)
+module Rpc.Internal.Retry exposing (Math, Moment, Outcome, Policy, Retry(..), attemptTimeout, budget, delay, jitter, math, retryable, run, startBudget, step, wait)
 
 {-| When to try a call again. Not exposed. Two public modules need the
 constructor: `Rpc.Retry` builds and modifies a policy and aliases the type,
