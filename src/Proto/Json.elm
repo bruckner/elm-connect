@@ -2629,12 +2629,17 @@ nestedAnyWith depth registry =
     anyWith (InternalRegistry.atLeast depth registry)
 
 
-{-| How deep the read a registry was passed to has nested, where a message
-inside an `Any` starts counting.
+{-| The depth a message that takes the registry starts counting from when it
+is read with it: 1 at the top, as for any message, or, inside an `Any`, the
+depth the read has reached there, so the message counts on from the `Any`.
+
+    decodeNoteWith types =
+        decodeNestedNoteWith types (registryDepth types)
+
 -}
 registryDepth : Registry -> Int
-registryDepth =
-    InternalRegistry.depthOf
+registryDepth (InternalRegistry.Registry _ depth _) =
+    max 1 depth
 
 
 

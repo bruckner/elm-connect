@@ -1617,7 +1617,7 @@ decodeNestedTreeLink depth =
 -}
 decodeWellKnownWith : Proto.Registry.Registry -> Json.Decode.Decoder WellKnown
 decodeWellKnownWith types =
-    decodeNestedWellKnownWith types (max 1 (Proto.Json.registryDepth types))
+    decodeNestedWellKnownWith types (Proto.Json.registryDepth types)
 
 
 {-| [`decodeWellKnownWith`](#decodeWellKnownWith) for a [`WellKnown`](#WellKnown) held `depth` levels deep.
@@ -1695,7 +1695,7 @@ decodeLeaf =
 -}
 decodeEverythingWith : Proto.Registry.Registry -> Json.Decode.Decoder Everything
 decodeEverythingWith types =
-    decodeNestedEverythingWith types (max 1 (Proto.Json.registryDepth types))
+    decodeNestedEverythingWith types (Proto.Json.registryDepth types)
 
 
 {-| [`decodeEverythingWith`](#decodeEverythingWith) for an [`Everything`](#Everything) held `depth` levels deep.

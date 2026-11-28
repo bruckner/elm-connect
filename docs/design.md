@@ -825,8 +825,8 @@ rpc shared call =
     `Proto.Json.deeper` for one on no cycle, built once as its holder's
     decoder is, which is itself built as it is read, as such a
     message's plain decoder always was), and `decodeNodeWith types`
-    starts at the depth the registry carries, or 1 (`max 1
-    (Proto.Json.registryDepth types)`), so a message read inside an
+    starts at the depth the registry carries, or 1
+    (`Proto.Json.registryDepth types`), so a message read inside an
     `Any` counts on from it. The encoder of a message that reaches an
     `Any` is given no depth: the registry it is run with carries it, as
     the decoder reads it. It writes each field holding a message that
@@ -4339,7 +4339,7 @@ value as two halves with its decimal text.
   level deeper in the registry it is run with (`Proto.Json.writeDeeper`),
   and an `Any` with `Proto.Json.writeAny`, all counting from the
   message's depth, the registry's or 1, whichever is more, as the decoder
-  starts it (`max 1 (Proto.Json.registryDepth types)`), so an `Any` held
+  starts it (`Proto.Json.registryDepth types`), so an `Any` held
   through any messages is counted where the read counts it. Each `Any`
   is a level, and an `Any` past 100 fails with
   `TooDeep`, named `google.protobuf.Any`, exactly where a JSON read of

@@ -2905,9 +2905,8 @@ writes the general form.
   `boolMapField` given `\item -> encodeTotal (write item)`. Generated
   code passes that closure, `\entry -> encodeTotal (encodeFoo entry)`,
   built once per write of the field as the helper built it. Passing
-  `encodeTotal << encodeFoo` instead would build a
-  partial application of two steps per write and an extra call per
-  entry: writing a message holding three empty maps of messages took
+  `encodeTotal << encodeFoo` instead would build a partial application
+  of two steps per write and an extra call per entry: writing a message holding three empty maps of messages took
   0.21 µs that way against 0.18 µs (+12 %, against an A/A bound of
   1.8 %), and +1 to +3 % with entries. `totalOptionalField` and
   `totalRepeatedField` stay: their bodies unwrap the encoder in place,
@@ -2929,6 +2928,28 @@ writes the general form.
   are one pair, `nullMember` and `nullMemberEither`, given the decoder,
   which generated code writes where the member list is built, as the
   helpers built it.
+- The entry decoder of a message that takes the registry started at
+  `max 1 (registryDepth types)`, arithmetic in every such module. The
+  runtime's `registryDepth` now gives that depth itself, the registry's
+  or 1, whichever is more, which was the only use generated code made
+  of it; no read is refused at another depth.
+
+Measured against the base (Elm 0.19.3, `elm make --optimize`, terser
+5.36.0, `gzip -9 -n`): a JSON-only client and Eliza link the same
+definitions and are within 2 bytes gzipped; the one-call clients and
+the notes example, which read a message that takes the registry, drop
+one definition and are 5 to 11 bytes smaller gzipped. A program reading and writing the codec corpus's every shape
+shrinks 234 bytes minified, 75 gzipped. Timed with one build per
+process (node 24, 6 rounds of 3, A/A within 1.8 %), the singular
+`Value` field's read, absent, `null` or holding JSON, by a decoder
+built per read, is within 1 %, and so is the map write above; the
+members' decoders are built when and as the helpers built them.
+
+Two kinds of name stay. The one-name and `Either` pair of each step
+stays: merging them would put a second string literal on most of the
+hundreds of steps in generated code, and is a separate question
+(decisions: "Decoder steps"). `totalOptionalField` and
+`totalRepeatedField` stay for the closure they save, as above.
 
 Where: design §3.4, §3.5, §3.6.
 

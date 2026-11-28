@@ -473,7 +473,7 @@ decodeBlob =
 -}
 decodeLabeledWith : Proto.Registry.Registry -> Json.Decode.Decoder Labeled
 decodeLabeledWith types =
-    decodeNestedLabeledWith types (max 1 (Proto.Json.registryDepth types))
+    decodeNestedLabeledWith types (Proto.Json.registryDepth types)
 
 
 {-| [`decodeLabeledWith`](#decodeLabeledWith) for a [`Labeled`](#Labeled) held `depth` levels deep.
@@ -491,7 +491,7 @@ decodeNestedLabeledWith types depth =
 -}
 decodeLabelBlobRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder LabelBlobRequest
 decodeLabelBlobRequestWith types =
-    decodeNestedLabelBlobRequestWith types (max 1 (Proto.Json.registryDepth types))
+    decodeNestedLabelBlobRequestWith types (Proto.Json.registryDepth types)
 
 
 {-| [`decodeLabelBlobRequestWith`](#decodeLabelBlobRequestWith) for a [`LabelBlobRequest`](#LabelBlobRequest) held `depth` levels deep.
