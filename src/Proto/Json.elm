@@ -3,14 +3,12 @@ module Proto.Json exposing
     , writeObject, Fields, plainFields, checkedFields
     , Field, writeOptional, writeRepeated, writeDict, writeBoolMap, writeMember, writeDeeper
     , writeTimestamp, writeDuration, writeFieldMask, writeStruct, writeListValue, writeValue, writeAny
-    , message, messageField, messageFieldEither, nestedMessageValueField, nestedMessageValueFieldEither, emptyMessage
+    , message, messageField, messageFieldEither, messageNullField, messageNullFieldEither, emptyMessage
     , objectOfFields
     , implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
-    , totalOptionalField, totalRepeatedField, totalDictField, totalBoolMapField
+    , totalOptionalField, totalRepeatedField
     , memo, deeper, deeperWith
-    , oneof, members, Member, member, memberEither
-    , emptyMember, emptyMemberEither, nestedValueMember, nestedValueMemberEither
-    , nullValueMember, nullValueMemberEither
+    , oneof, members, Member, member, memberEither, nullMember, nullMemberEither
     , enum, enumOrZero
     , stringDict, int32Dict, uint32Dict, int64Dict, uint64Dict, boolMap
     , string
@@ -88,7 +86,7 @@ below give them, and those that can as a [`Field`](#Field) each.
 A generated decoder checks once, with [`message`](#message), that the JSON is
 an object, and then reads each field with a step that does not check it again.
 
-@docs message, messageField, messageFieldEither, nestedMessageValueField, nestedMessageValueFieldEither, emptyMessage
+@docs message, messageField, messageFieldEither, messageNullField, messageNullFieldEither, emptyMessage
 
 
 # Encoding fields
@@ -110,12 +108,14 @@ reads a missing field as its default, so nothing is lost.
             )
 
 A field holding a message that holds nothing a write can refuse unwraps that
-message's encoder with [`encodeTotal`](#encodeTotal), through the `total`
-helpers.
+message's encoder with [`encodeTotal`](#encodeTotal): an optional or repeated
+one through the `total` helpers, a map through the plain helper.
+
+    dictField identity (\entry -> encodeTotal (encodeAuthor entry)) value.byName
 
 @docs objectOfFields
 @docs implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
-@docs totalOptionalField, totalRepeatedField, totalDictField, totalBoolMapField
+@docs totalOptionalField, totalRepeatedField
 
 
 # Messages that nest
@@ -151,9 +151,7 @@ the limit a decoder fails with "Expecting messages nested at most 100 deep".
 
 # Oneofs
 
-@docs oneof, members, Member, member, memberEither
-@docs emptyMember, emptyMemberEither, nestedValueMember, nestedValueMemberEither
-@docs nullValueMember, nullValueMemberEither
+@docs oneof, members, Member, member, memberEither, nullMember, nullMemberEither
 
 
 # Enums
@@ -208,10 +206,10 @@ By default a `bytes` field is held as its base64 text. Code generated with the
 # Well-known types
 
 `Value` is any JSON, held as a [`Proto.Value.Value`](Proto-Value#Value). A
-message holding one nests, so a field of it decodes with
-[`nestedMessageValueField`](#nestedMessageValueField), a oneof member with
-[`nestedValueMember`](#nestedValueMember), and a list or map of it with
-[`nestedValue`](#nestedValue). The `nested` forms read one held by a message
+message holding one nests, so it decodes with [`nestedValue`](#nestedValue):
+a field of it through [`messageNullField`](#messageNullField), a oneof member
+through [`nullMember`](#nullMember), and a list or map of it as any other
+value. The `nested` forms read one held by a message
 that nests, counting its levels on from the message's depth; [`value`](#value)
 reads one on its own.
 The wrapper types (`Int32Value` and the rest) use
@@ -341,12 +339,14 @@ messageFieldEither jsonName protoName default decoder =
     Json.Decode.map2 (|>) (valueIn (spellings jsonName protoName) default decoder)
 
 
-{-| Decode a field of type `google.protobuf.Value` inside
-[`message`](#message), held as a `Maybe Proto.Value.Value`, for a message at
-`depth`, which the value's arrays and objects count on from. A missing key
-gives `Nothing`. Any value under the key gives `Just` it, `null` included:
-`null` is one of a `Value`'s own values, so a field holding it is set, as
-protobuf's own parsers read it.
+{-| Decode a field inside [`message`](#message) for which `null` is a value,
+not absence, held as a `Maybe`: a missing key gives `Nothing`, and any value
+under the key, `null` included, gives `Just` what `decoder` reads from it.
+
+A field of type `google.protobuf.Value` is read so, with
+[`nestedValue`](#nestedValue) at its message's depth, which the value's arrays
+and objects count on from: `null` is one of a `Value`'s own values, so a field
+holding it is set, as protobuf's own parsers read it.
 
     type alias Setting =
         { name : String, value : Maybe Proto.Value.Value }
@@ -356,7 +356,7 @@ protobuf's own parsers read it.
         message
             (Json.Decode.succeed Setting
                 |> messageField "name" "" string
-                |> nestedMessageValueField "value" depth
+                |> messageNullField "value" (nestedValue depth)
             )
 
 To encode one, `Nothing` leaves the field out and `Just` writes its JSON:
@@ -364,27 +364,37 @@ To encode one, `Nothing` leaves the field out and `Just` writes its JSON:
     writeObject [ checkedFields [ ( "value", writeOptional writeValue setting.value ) ] ]
 
 -}
-nestedMessageValueField : String -> Int -> Decoder (Maybe Proto.Value.Value -> b) -> Decoder b
-nestedMessageValueField name =
-    nestedMessageValueFieldEither name name
+messageNullField : String -> Decoder a -> Decoder (Maybe a -> b) -> Decoder b
+messageNullField name =
+    messageNullFieldEither name name
 
 
-{-| [`nestedMessageValueField`](#nestedMessageValueField) for a field whose
-JSON name differs from its proto name: the JSON name first, then the proto
-name, as in [`messageFieldEither`](#messageFieldEither).
+{-| [`messageNullField`](#messageNullField) for a field whose JSON name differs
+from its proto name: the JSON name first, then the proto name, as in
+[`messageFieldEither`](#messageFieldEither).
 -}
-nestedMessageValueFieldEither : String -> String -> Int -> Decoder (Maybe Proto.Value.Value -> b) -> Decoder b
-nestedMessageValueFieldEither jsonName protoName depth =
+messageNullFieldEither : String -> String -> Decoder a -> Decoder (Maybe a -> b) -> Decoder b
+messageNullFieldEither jsonName protoName decoder =
+    let
+        names =
+            spellings jsonName protoName
+
+        present =
+            Json.Decode.map Just decoder
+    in
     Json.Decode.map2 (|>)
         (Json.Decode.value
             |> Json.Decode.andThen
                 (\object_ ->
-                    case spelledInObject (spellings jsonName protoName) object_ of
+                    case spelledInObject names object_ of
                         Err problem ->
                             Json.Decode.fail problem
 
-                        Ok found ->
-                            nestedCheckedJson depth found
+                        Ok (Just ( name, _ )) ->
+                            Json.Decode.field name present
+
+                        Ok Nothing ->
+                            Json.Decode.succeed Nothing
                 )
         )
 
@@ -752,22 +762,6 @@ totalRepeatedField write values =
         Just (Json.Encode.list (\item -> Writer.total (write item)) values)
 
 
-{-| [`dictField`](#dictField) of a message that holds nothing a write can
-refuse.
--}
-totalDictField : (k -> String) -> (v -> Encoder Never) -> Dict.Dict k v -> Maybe Value
-totalDictField key write entries =
-    dictField key (\item -> Writer.total (write item)) entries
-
-
-{-| [`boolMapField`](#boolMapField) of a message that holds nothing a write
-can refuse.
--}
-totalBoolMapField : (a -> Encoder Never) -> List ( Bool, a ) -> Maybe Value
-totalBoolMapField write pairs =
-    boolMapField (\item -> Writer.total (write item)) pairs
-
-
 {-| Decode a oneof in a decoding pipeline: unlike
 [`messageField`](#messageField), the decoder reads the message object itself,
 since each member of a oneof is a key of the message. The decoder is usually
@@ -803,9 +797,8 @@ error messages), its unset value and its members:
             ]
 
 A member is present when the object holds its key with a value other than
-`null`, which proto3 JSON reads as absent; a
-[`nestedValueMember`](#nestedValueMember) or
-[`nullValueMember`](#nullValueMember) is present when it holds `null` too.
+`null`, which proto3 JSON reads as absent; a [`nullMember`](#nullMember) is
+present when it holds `null` too.
 Then:
 
   - no member present decodes as the unset value;
@@ -949,6 +942,12 @@ reads as absent.
 
     member "text" (Json.Decode.map NoteKindText string)
 
+A member of type `google.protobuf.Empty`, whose constructor carries nothing,
+maps [`empty`](#empty) onto it: it is present when its key holds an object
+(usually `{}`), and any value but `null` or an object fails.
+
+    member "clear" (Json.Decode.map (\() -> ActionKindClear) empty)
+
 -}
 member : String -> Decoder a -> Member a
 member name =
@@ -964,88 +963,42 @@ memberEither jsonName protoName decoder =
     Member { names = spellings jsonName protoName, nullIsSet = False, decoder = decoder }
 
 
-{-| A member of type `google.protobuf.Empty`, whose constructor carries
-nothing: present when its key holds an object (usually `{}`). `null` reads as
-absent, and any other value fails.
+{-| A member of a oneof for which `null` is a value, not absence: present when
+its key holds any value, `null` included, which is given to the decoder.
+
+A member of type `google.protobuf.Value` is read so, with
+[`nestedValue`](#nestedValue) at its message's depth: `null` is one of a
+`Value`'s own values, so a member present as `null` is set and holds the JSON
+`null`, as protobuf's own parsers read it. So is a member of the enum
+`google.protobuf.NullValue`, whose constructor carries nothing, with
+[`nullValue`](#nullValue), since proto3 JSON writes it as `null`.
 
     type ActionKind
         = ActionKindUnset
-        | ActionKindClear
-
-    decodeActionKind : Decoder ActionKind
-    decodeActionKind =
-        members "kind" ActionKindUnset [ emptyMember "clear" ActionKindClear ]
-
--}
-emptyMember : String -> a -> Member a
-emptyMember name =
-    emptyMemberEither name name
-
-
-{-| [`emptyMember`](#emptyMember) for a member whose JSON name differs from its
-proto name: the JSON name first, then the proto name.
--}
-emptyMemberEither : String -> String -> a -> Member a
-emptyMemberEither jsonName protoName constructor =
-    memberEither jsonName protoName (Json.Decode.map (\_ -> constructor) empty)
-
-
-{-| A member of type `google.protobuf.Value`, given its constructor, for a
-oneof of a message at `depth`, which the value's arrays and objects count on
-from. Its value is any JSON, `null` included: unlike every member but a
-[`nullValueMember`](#nullValueMember), one present as `null` is set and holds
-the JSON `null`, as protobuf's own parsers read it.
-
-    nestedValueMember "payload" depth NoteKindPayload
-
--}
-nestedValueMember : String -> Int -> (Proto.Value.Value -> a) -> Member a
-nestedValueMember name =
-    nestedValueMemberEither name name
-
-
-{-| [`nestedValueMember`](#nestedValueMember) for a member whose JSON name
-differs from its proto name: the JSON name first, then the proto name.
--}
-nestedValueMemberEither : String -> String -> Int -> (Proto.Value.Value -> a) -> Member a
-nestedValueMemberEither jsonName protoName depth constructor =
-    Member
-        { names = spellings jsonName protoName
-        , nullIsSet = True
-        , decoder = Json.Decode.map constructor (nestedValue depth)
-        }
-
-
-{-| A member of the enum `google.protobuf.NullValue`, whose constructor carries
-nothing: present when its key holds `null`, which proto3 JSON writes for it, or
-the value's name or number, as [`nullValue`](#nullValue) reads them. Unlike
-every member but a [`nestedValueMember`](#nestedValueMember), one present as
-`null` is set.
-
-    type ActionKind
-        = ActionKindUnset
+        | ActionKindPayload Proto.Value.Value
         | ActionKindNothing
 
-    decodeActionKind : Decoder ActionKind
-    decodeActionKind =
-        members "kind" ActionKindUnset [ nullValueMember "nothing" ActionKindNothing ]
+    decodeNestedActionKind : Int -> Decoder ActionKind
+    decodeNestedActionKind depth =
+        members "kind"
+            ActionKindUnset
+            [ nullMember "payload" (Json.Decode.map ActionKindPayload (nestedValue depth))
+            , nullMember "nothing" (Json.Decode.map (\() -> ActionKindNothing) nullValue)
+            ]
 
 -}
-nullValueMember : String -> a -> Member a
-nullValueMember name =
-    nullValueMemberEither name name
+nullMember : String -> Decoder a -> Member a
+nullMember name =
+    nullMemberEither name name
 
 
-{-| [`nullValueMember`](#nullValueMember) for a member whose JSON name differs
-from its proto name: the JSON name first, then the proto name.
+{-| [`nullMember`](#nullMember) for a member whose JSON name differs from its
+proto name: the JSON name first, then the proto name, as in
+[`messageFieldEither`](#messageFieldEither).
 -}
-nullValueMemberEither : String -> String -> a -> Member a
-nullValueMemberEither jsonName protoName constructor =
-    Member
-        { names = spellings jsonName protoName
-        , nullIsSet = True
-        , decoder = Json.Decode.map (\() -> constructor) nullValue
-        }
+nullMemberEither : String -> String -> Decoder a -> Member a
+nullMemberEither jsonName protoName decoder =
+    Member { names = spellings jsonName protoName, nullIsSet = True, decoder = decoder }
 
 
 {-| Decode an enum, given its proto name, its zero value and a row per value
@@ -2362,19 +2315,6 @@ encodeValue =
     Proto.Value.toJson
 
 
-{-| A field of type `Value` found by its key, read as
-[`nestedValue`](#nestedValue) reads one at `depth`.
--}
-nestedCheckedJson : Int -> Maybe ( String, Value ) -> Decoder (Maybe Proto.Value.Value)
-nestedCheckedJson depth found =
-    case found of
-        Just ( name, _ ) ->
-            Json.Decode.field name (Json.Decode.map Just (nestedValue depth))
-
-        Nothing ->
-            Json.Decode.succeed Nothing
-
-
 {-| Decode a `google.protobuf.Any` into one holding its message's protobuf
 binary, which the registry's entry for its type converts the JSON to: an
 object with `"@type"`, holding the message's fields or, for a well-known type
@@ -2689,12 +2629,17 @@ nestedAnyWith depth registry =
     anyWith (InternalRegistry.atLeast depth registry)
 
 
-{-| How deep the read a registry was passed to has nested, where a message
-inside an `Any` starts counting.
+{-| The depth a message that takes the registry starts counting from when it
+is read with it: 1 at the top, as for any message, or, inside an `Any`, the
+depth the read has reached there, so the message counts on from the `Any`.
+
+    decodeNoteWith types =
+        decodeNestedNoteWith types (registryDepth types)
+
 -}
 registryDepth : Registry -> Int
-registryDepth =
-    InternalRegistry.depthOf
+registryDepth (InternalRegistry.Registry _ depth _) =
+    max 1 depth
 
 
 

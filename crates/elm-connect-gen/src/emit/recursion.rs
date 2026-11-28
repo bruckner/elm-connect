@@ -208,8 +208,9 @@ impl Emitter {
     /// decodeNestedNode 1` and `decodeNestedNode = Proto.Json.memo
     /// (\depth -> body)`; under `Deep::Called`, `decodeNestedNote depth =
     /// body`; under `Deep::Built`, `decodeNodeWith types =
-    /// decodeNestedNodeWith types 1` and `decodeNestedNodeWith types depth
-    /// = body`.
+    /// decodeNestedNodeWith types (Proto.Json.registryDepth types)`, which
+    /// is 1 at the top and counts on from an `Any` the message is read
+    /// inside, and `decodeNestedNodeWith types depth = body`.
     pub(super) fn nested_decoders(
         &mut self,
         deep: Deep,
@@ -265,14 +266,8 @@ impl Emitter {
                             [
                                 var(REGISTRY_ARGUMENT),
                                 apply(
-                                    var("max"),
-                                    [
-                                        int(1),
-                                        apply(
-                                            self.reference((PROTO_JSON, "registryDepth")),
-                                            [var(REGISTRY_ARGUMENT)],
-                                        ),
-                                    ],
+                                    self.reference((PROTO_JSON, "registryDepth")),
+                                    [var(REGISTRY_ARGUMENT)],
                                 ),
                             ],
                         ),

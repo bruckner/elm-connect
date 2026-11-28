@@ -304,7 +304,7 @@ decodeStatus =
 -}
 decodeItemWith : Proto.Registry.Registry -> Json.Decode.Decoder Item
 decodeItemWith types =
-    decodeNestedItemWith types (max 1 (Proto.Json.registryDepth types))
+    decodeNestedItemWith types (Proto.Json.registryDepth types)
 
 
 {-| [`decodeItemWith`](#decodeItemWith) for an [`Item`](#Item) held `depth` levels deep.
@@ -345,7 +345,7 @@ decodeListItemsRequest =
 -}
 decodeListItemsResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder ListItemsResponse
 decodeListItemsResponseWith types =
-    decodeNestedListItemsResponseWith types (max 1 (Proto.Json.registryDepth types))
+    decodeNestedListItemsResponseWith types (Proto.Json.registryDepth types)
 
 
 {-| [`decodeListItemsResponseWith`](#decodeListItemsResponseWith) for a [`ListItemsResponse`](#ListItemsResponse) held `depth` levels deep.

@@ -221,7 +221,7 @@ encodeTeam value =
             , ( "totals", Proto.Json.dictField String.fromInt Proto.Json.encodeInt64 value.totals )
             , ( "byId", Proto.Json.dictField identity Json.Encode.string value.byId )
             , ( "counts", Proto.Json.dictField identity Json.Encode.int value.counts )
-            , ( "members", Proto.Json.totalDictField identity encodeMember value.members )
+            , ( "members", Proto.Json.dictField identity (\entry -> Proto.Json.encodeTotal (encodeMember entry)) value.members )
             , ( "roles", Proto.Json.dictField String.fromInt encodeRole value.roles )
             , ( "byFlag", Proto.Json.boolMapField Json.Encode.string value.byFlag )
             , ( "byOffset", Proto.Json.dictField String.fromInt Json.Encode.string value.byOffset )

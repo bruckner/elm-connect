@@ -1040,12 +1040,12 @@ encodeMaps value =
             , ( "sint32Bool", Proto.Json.dictField String.fromInt Json.Encode.bool value.sint32Bool )
             , ( "sint64Float", Proto.Json.dictField identity Proto.Json.encodeFloat value.sint64Float )
             , ( "fixed32Uint64", Proto.Json.dictField String.fromInt Proto.Json.encodeInt64 value.fixed32Uint64 )
-            , ( "fixed64Leaf", Proto.Json.totalDictField identity encodeLeaf value.fixed64Leaf )
+            , ( "fixed64Leaf", Proto.Json.dictField identity (\entry -> Proto.Json.encodeTotal (encodeLeaf entry)) value.fixed64Leaf )
             , ( "sfixed32Bytes", Proto.Json.dictField String.fromInt Proto.Json.encodeBytes value.sfixed32Bytes )
             , ( "sfixed64Int32", Proto.Json.dictField identity Json.Encode.int value.sfixed64Int32 )
             , ( "boolString", Proto.Json.boolMapField Json.Encode.string value.boolString )
-            , ( "boolLeaf", Proto.Json.totalBoolMapField encodeLeaf value.boolLeaf )
-            , ( "stringLeaf", Proto.Json.totalDictField identity encodeLeaf value.stringLeaf )
+            , ( "boolLeaf", Proto.Json.boolMapField (\entry -> Proto.Json.encodeTotal (encodeLeaf entry)) value.boolLeaf )
+            , ( "stringLeaf", Proto.Json.dictField identity (\entry -> Proto.Json.encodeTotal (encodeLeaf entry)) value.stringLeaf )
             ]
         )
 
@@ -1194,7 +1194,7 @@ encodeTree value =
             ([ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
              , ( "left", Proto.Json.totalOptionalField encodeTree_ value.left )
              , ( "children", Proto.Json.totalRepeatedField encodeTree_ value.children )
-             , ( "named", Proto.Json.totalDictField identity encodeTree_ value.named )
+             , ( "named", Proto.Json.dictField identity (\entry -> Proto.Json.encodeTotal (encodeTree_ entry)) value.named )
              ]
                 ++ encodeTreeLink value.link
             )
@@ -1504,12 +1504,12 @@ decodeNestedChoicePick depth =
         , Proto.Json.member "data" (Json.Decode.map ChoicePickData Proto.Json.bytes)
         , Proto.Json.member "kind" (Json.Decode.map ChoicePickKind decodeKind)
         , Proto.Json.member "leaf" (Json.Decode.map ChoicePickLeaf decodeLeaf)
-        , Proto.Json.emptyMember "nothing" ChoicePickNothing
-        , Proto.Json.nestedValueMember "json" depth ChoicePickJson
+        , Proto.Json.member "nothing" (Json.Decode.map (\() -> ChoicePickNothing) Proto.Json.empty)
+        , Proto.Json.nullMember "json" (Json.Decode.map ChoicePickJson (Proto.Json.nestedValue depth))
         , Proto.Json.member "at" (Json.Decode.map ChoicePickAt Proto.Json.timestamp)
         , Proto.Json.member "wrapped" (Json.Decode.map ChoicePickWrapped Proto.Json.int32)
         , Proto.Json.memberEither "twoWords" "two_words" (Json.Decode.map ChoicePickTwoWords Proto.Json.string)
-        , Proto.Json.nullValueMember "none" ChoicePickNone
+        , Proto.Json.nullMember "none" (Json.Decode.map (\() -> ChoicePickNone) Proto.Json.nullValue)
         ]
 
 
@@ -1617,7 +1617,7 @@ decodeNestedTreeLink depth =
 -}
 decodeWellKnownWith : Proto.Registry.Registry -> Json.Decode.Decoder WellKnown
 decodeWellKnownWith types =
-    decodeNestedWellKnownWith types (max 1 (Proto.Json.registryDepth types))
+    decodeNestedWellKnownWith types (Proto.Json.registryDepth types)
 
 
 {-| [`decodeWellKnownWith`](#decodeWellKnownWith) for a [`WellKnown`](#WellKnown) held `depth` levels deep.
@@ -1629,7 +1629,7 @@ decodeNestedWellKnownWith types depth =
             |> Proto.Json.messageField "any" Nothing (Json.Decode.map Just (Proto.Json.nestedAnyWith depth types))
             |> Proto.Json.messageField "struct" Nothing (Json.Decode.map Just (Proto.Json.nestedStruct depth))
             |> Proto.Json.messageField "list" Nothing (Json.Decode.map Just (Proto.Json.nestedListValue depth))
-            |> Proto.Json.nestedMessageValueField "value" depth
+            |> Proto.Json.messageNullField "value" (Proto.Json.nestedValue depth)
             |> Proto.Json.messageField "timestamp" Nothing (Json.Decode.map Just Proto.Json.timestamp)
             |> Proto.Json.messageField "duration" Nothing (Json.Decode.map Just Proto.Json.duration)
             |> Proto.Json.messageField "mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
@@ -1695,7 +1695,7 @@ decodeLeaf =
 -}
 decodeEverythingWith : Proto.Registry.Registry -> Json.Decode.Decoder Everything
 decodeEverythingWith types =
-    decodeNestedEverythingWith types (max 1 (Proto.Json.registryDepth types))
+    decodeNestedEverythingWith types (Proto.Json.registryDepth types)
 
 
 {-| [`decodeEverythingWith`](#decodeEverythingWith) for an [`Everything`](#Everything) held `depth` levels deep.

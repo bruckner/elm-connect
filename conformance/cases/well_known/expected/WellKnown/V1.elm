@@ -70,7 +70,7 @@ elmConnectVersion_ =
   - [`records`](WellKnown-V1-Event#records)
   - [`columns`](WellKnown-V1-Event#columns)
   - [`lastValue`](WellKnown-V1-Event#lastValue): An optional Value is the same Maybe; its JSON name differs, so it
-    decodes with valueFieldEither. A map of Value holds it bare.
+    decodes with messageNullFieldEither. A map of Value holds it bare.
   - [`settings`](WellKnown-V1-Event#settings)
   - [`nothing`](WellKnown-V1-Event#nothing): NullValue's one value carries nothing: (), never written, `optional`
     or not. Lists and maps hold it as null.
@@ -331,7 +331,7 @@ decodeNestedEvent depth =
             |> Proto.Json.messageFieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
             |> Proto.Json.messageField "marker" () Proto.Json.empty
             |> Proto.Json.messageField "metadata" Nothing (Json.Decode.map Just (Proto.Json.nestedStruct depth))
-            |> Proto.Json.nestedMessageValueField "payload" depth
+            |> Proto.Json.messageNullField "payload" (Proto.Json.nestedValue depth)
             |> Proto.Json.messageField "items" Nothing (Json.Decode.map Just (Proto.Json.nestedListValue depth))
             |> Proto.Json.messageField "ratio" Nothing (Json.Decode.map Just Proto.Json.float)
             |> Proto.Json.messageField "weight" Nothing (Json.Decode.map Just Proto.Json.float32)
@@ -351,7 +351,7 @@ decodeNestedEvent depth =
             |> Proto.Json.messageField "seen" Dict.empty (Proto.Json.stringDict Proto.Json.empty)
             |> Proto.Json.messageField "records" [] (Json.Decode.list (Proto.Json.nestedStruct depth))
             |> Proto.Json.messageField "columns" Dict.empty (Proto.Json.stringDict (Proto.Json.nestedListValue depth))
-            |> Proto.Json.nestedMessageValueFieldEither "lastValue" "last_value" depth
+            |> Proto.Json.messageNullFieldEither "lastValue" "last_value" (Proto.Json.nestedValue depth)
             |> Proto.Json.messageField "settings" Dict.empty (Proto.Json.stringDict (Proto.Json.nestedValue depth))
             |> Proto.Json.messageField "nothing" () Proto.Json.nullValue
             |> Proto.Json.messageFieldEither "maybeNothing" "maybe_nothing" () Proto.Json.nullValue
@@ -376,10 +376,10 @@ decodeNestedEventWhen depth =
         EventWhenUnset
         [ Proto.Json.member "at" (Json.Decode.map EventWhenAt Proto.Json.timestamp)
         , Proto.Json.member "after" (Json.Decode.map EventWhenAfter Proto.Json.duration)
-        , Proto.Json.nestedValueMember "whenever" depth EventWhenWhenever
+        , Proto.Json.nullMember "whenever" (Json.Decode.map EventWhenWhenever (Proto.Json.nestedValue depth))
         , Proto.Json.member "schedule" (Json.Decode.map EventWhenSchedule (Proto.Json.nestedStruct depth))
         , Proto.Json.member "dates" (Json.Decode.map EventWhenDates (Proto.Json.nestedListValue depth))
-        , Proto.Json.nullValueMember "never" EventWhenNever
+        , Proto.Json.nullMember "never" (Json.Decode.map (\() -> EventWhenNever) Proto.Json.nullValue)
         ]
 
 

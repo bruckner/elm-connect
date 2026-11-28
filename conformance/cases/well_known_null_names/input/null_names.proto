@@ -1,0 +1,16 @@
+// A field and oneof members that null sets, each with a JSON name that
+// differs from its proto name, so they decode with the two-name steps
+// messageNullFieldEither and nullMemberEither (design §3.5, §3.6).
+syntax = "proto3";
+
+package null_names.v1;
+
+import "google/protobuf/struct.proto";
+
+message Reading {
+  google.protobuf.Value raw_value = 1;
+  oneof choice {
+    google.protobuf.Value json_value = 2;
+    google.protobuf.NullValue null_value = 3;
+  }
+}

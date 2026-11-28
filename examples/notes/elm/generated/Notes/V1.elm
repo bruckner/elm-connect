@@ -562,7 +562,7 @@ decodeVisibility =
 -}
 decodeNoteWith : Proto.Registry.Registry -> Json.Decode.Decoder Note
 decodeNoteWith types =
-    decodeNestedNoteWith types (max 1 (Proto.Json.registryDepth types))
+    decodeNestedNoteWith types (Proto.Json.registryDepth types)
 
 
 {-| [`decodeNoteWith`](#decodeNoteWith) for a [`Note`](#Note) held `depth` levels deep.
@@ -625,7 +625,7 @@ decodeListNotesRequest =
 -}
 decodeListNotesResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder ListNotesResponse
 decodeListNotesResponseWith types =
-    decodeNestedListNotesResponseWith types (max 1 (Proto.Json.registryDepth types))
+    decodeNestedListNotesResponseWith types (Proto.Json.registryDepth types)
 
 
 {-| [`decodeListNotesResponseWith`](#decodeListNotesResponseWith) for a [`ListNotesResponse`](#ListNotesResponse) held `depth` levels deep.
@@ -643,7 +643,7 @@ decodeNestedListNotesResponseWith types depth =
 -}
 decodeCreateNoteRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder CreateNoteRequest
 decodeCreateNoteRequestWith types =
-    decodeNestedCreateNoteRequestWith types (max 1 (Proto.Json.registryDepth types))
+    decodeNestedCreateNoteRequestWith types (Proto.Json.registryDepth types)
 
 
 {-| [`decodeCreateNoteRequestWith`](#decodeCreateNoteRequestWith) for a [`CreateNoteRequest`](#CreateNoteRequest) held `depth` levels deep.
@@ -660,7 +660,7 @@ decodeNestedCreateNoteRequestWith types depth =
 -}
 decodeUpdateNoteRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder UpdateNoteRequest
 decodeUpdateNoteRequestWith types =
-    decodeNestedUpdateNoteRequestWith types (max 1 (Proto.Json.registryDepth types))
+    decodeNestedUpdateNoteRequestWith types (Proto.Json.registryDepth types)
 
 
 {-| [`decodeUpdateNoteRequestWith`](#decodeUpdateNoteRequestWith) for an [`UpdateNoteRequest`](#UpdateNoteRequest) held `depth` levels deep.

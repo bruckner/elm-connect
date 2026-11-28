@@ -165,7 +165,7 @@ encodeEnvelopeBody value =
 -}
 decodeEnvelopeWith : Proto.Registry.Registry -> Json.Decode.Decoder Envelope
 decodeEnvelopeWith types =
-    decodeNestedEnvelopeWith types (max 1 (Proto.Json.registryDepth types))
+    decodeNestedEnvelopeWith types (Proto.Json.registryDepth types)
 
 
 {-| [`decodeEnvelopeWith`](#decodeEnvelopeWith) for an [`Envelope`](#Envelope) held `depth` levels deep.
@@ -186,7 +186,7 @@ decodeNestedEnvelopeWith types depth =
 -}
 decodeEnvelopeBodyWith : Proto.Registry.Registry -> Json.Decode.Decoder EnvelopeBody
 decodeEnvelopeBodyWith types =
-    decodeNestedEnvelopeBodyWith types (max 1 (Proto.Json.registryDepth types))
+    decodeNestedEnvelopeBodyWith types (Proto.Json.registryDepth types)
 
 
 {-| [`decodeEnvelopeBodyWith`](#decodeEnvelopeBodyWith) for an [`EnvelopeBody`](#EnvelopeBody) held `depth` levels deep.

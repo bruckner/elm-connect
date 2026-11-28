@@ -791,8 +791,7 @@ rpc shared call =
     against one budget with the `Any`s and the arrays and objects of the
     `Struct`, `Value` and `ListValue` it holds: those count on from its
     depth (`Proto.Json.nestedStruct depth`, `nestedListValue`,
-    `nestedValue`, `nestedMessageValueField`, `nestedValueMember`,
-    `nestedAnyWith`). Its codecs take the depth: `decodeNode =
+    `nestedValue`, `nestedAnyWith`). Its codecs take the depth: `decodeNode =
     decodeNestedNode 1`, and so for every message that nests. A message
     that does not nest holds nothing a read could count, and generates
     what it would in a schema with nothing that nests (decisions: "A
@@ -826,8 +825,8 @@ rpc shared call =
     `Proto.Json.deeper` for one on no cycle, built once as its holder's
     decoder is, which is itself built as it is read, as such a
     message's plain decoder always was), and `decodeNodeWith types`
-    starts at the depth the registry carries, or 1 (`max 1
-    (Proto.Json.registryDepth types)`), so a message read inside an
+    starts at the depth the registry carries, or 1
+    (`Proto.Json.registryDepth types`), so a message read inside an
     `Any` counts on from it. The encoder of a message that reaches an
     `Any` is given no depth: the registry it is run with carries it, as
     the decoder reads it. It writes each field holding a message that
@@ -940,7 +939,10 @@ refuse on a JSON write"):
   )` pairs, one per field, `Nothing` leaving the field out. It works for
   any `x`, so `Proto.Json.encodeTotal` writes it with no `Result`, and a
   message holding it unwraps it in place (`Proto.Json.totalOptionalField
-  encodeAuthor value.author`).
+  encodeAuthor value.author`, `totalRepeatedField` for a list; a map
+  passes `\entry -> Proto.Json.encodeTotal (encodeAuthor entry)` to the
+  plain `dictField` or `boolMapField`, which take a function per entry
+  anyway).
 - A message that holds an `Any`, or a `Timestamp`, `Duration`,
   `FieldMask`, `Struct`, `ListValue` or `Value`, at any depth, is
   `encodeNote : Note -> Proto.Json.Encoder Proto.Error.Error`: its
@@ -1056,9 +1058,8 @@ just the form encoders write.
   "displayName" or "display_name", but got both`), even when one of them
   is `null`: protobuf's own parsers (protobuf-go's protojson) reject it
   as a duplicate field. The same holds for every two-name
-  helper (`memberEither`, `emptyMemberEither`,
-  `nestedValueMemberEither`, `nullValueMemberEither`,
-  `nestedMessageValueFieldEither`). The
+  helper (`memberEither`, `nullMemberEither`,
+  `messageNullFieldEither`). The
   two names are equal only for one-word fields without an explicit
   `json_name`, so in practice most multi-word fields use `messageFieldEither`. Two names are the most there can
   be (decisions.md: Decoder steps).
@@ -1295,7 +1296,8 @@ In detail:
   member of it is a constructor without an argument (`ActionClear`, not
   `ActionClear ()`), encoded as `{"clear": {}}` and decoded from the
   member's key holding an object; a member present as `null` reads as
-  unset, as for any member (`Proto.Json.emptyMember`). Whether such a field was sent is lost
+  unset, as for any member (a `Proto.Json.member` mapping
+  `Proto.Json.empty` onto the constructor). Whether such a field was sent is lost
   (§3.8).
 - `NullValue`, the enum whose one value `NULL_VALUE` proto3 JSON writes
   as `null`, is `()` as `Empty` is, and for the same reason: it carries
@@ -1306,8 +1308,9 @@ In detail:
   `List ()` written as `null`s, as a map value `Dict K ()`. A oneof
   member of it is a constructor without an argument, written `null`,
   and `null` sets it, as protojson reads it
-  (`Proto.Json.nullValueMember`, the one member besides a `Value`'s for
-  which `null` is not absent). The codecs are `Proto.Json.nullValue`
+  (a `Proto.Json.nullMember` mapping `Proto.Json.nullValue` onto the
+  constructor; `nullMember` is the member for which `null` is not
+  absent, which a `Value`'s uses too). The codecs are `Proto.Json.nullValue`
   and `encodeNullValue`; a descriptor names it through
   `Proto.WellKnown.nullValue : Proto.Enum.Enum ()`, whose `toName` is
   `""` since its encoder writes no string. Why `()` and not a generated
@@ -1335,9 +1338,9 @@ In detail:
   own decoders, with the reason a read failed. Generated code reads a
   `Value` held by a message, which then nests, at the message's depth,
   as `Proto.Value.decoder` reads one from the top:
-  `Proto.Json.nestedMessageValueField` for a singular field,
-  `nestedValueMember` for a oneof member and `nestedValue` for a list or
-  map of it.
+  `Proto.Json.nestedValue depth`, through `Proto.Json.messageNullField`
+  for a singular field, through `Proto.Json.nullMember` for a oneof member,
+  and as any other value in a list or map.
   (decisions.md: "A union for `google.protobuf.Value`, one depth budget".)
 - The conversion counts depth as it goes: each array and object is a
   level, in JSON and in binary alike (a binary `Struct` or `ListValue`
@@ -1379,11 +1382,11 @@ In detail:
   `NullValue`, and only a missing key as unset. So a missing key is
   `Nothing`, and any JSON under the key is `Just` it, `null` included
   (`Just ValueNull`); `Nothing` leaves the field out and `Just` writes
-  its JSON, `null` too. The step is
-  `Proto.Json.nestedMessageValueField`
-  (`nestedMessageValueFieldEither` when the names differ), at the
-  message's depth, since a message holding a `Value` nests; it reads
-  `null` as set where `messageField` reads it as the default. This keeps a default message
+  its JSON, `null` too. The step is `Proto.Json.messageNullField`
+  (`messageNullFieldEither` when the names differ) of
+  `Proto.Json.nestedValue depth`, at the message's depth, since a
+  message holding a `Value` nests; it gives `null` to the decoder where
+  `messageField` reads it as the default. This keeps a default message
   `{}` and matches `Struct` and `ListValue`, and a client that never
   touches the field never sends it (decisions.md: `google.protobuf.Value`
   fields as `Maybe`). Repeated, as a map value and as a oneof member it
@@ -1539,7 +1542,8 @@ In detail:
     a member present as `null` reads as absent. The exception, as in
     protojson, is a member of `google.protobuf.Value`: `null` is a
     value of it, so a member present as `null` is set and holds
-    `ValueNull` (`Proto.Json.nestedValueMember`).
+    `ValueNull` (`Proto.Json.nullMember`, given `Json.Decode.map
+    NoteEventKindPayload (Proto.Json.nestedValue depth)`).
   - No member present decodes as the unset constructor.
   - A member present with a value its decoder rejects (`{"title": 1}`
     for a string member) fails the message, as a malformed plain field
@@ -1552,8 +1556,9 @@ In detail:
     as a duplicate (§3.4).
 - A member of `google.protobuf.Empty` is a constructor without an
   argument (`NoteEventKindArchived`), encoded as `{"archived": {}}` and
-  decoded by `Proto.Json.emptyMember`, which reads the key as set when
-  it holds an object; `null` reads as unset, as for any member, and any
+  decoded by a `Proto.Json.member` step of `Json.Decode.map (\() ->
+  NoteEventKindArchived) Proto.Json.empty`, which reads the key as set
+  when it holds an object; `null` reads as unset, as for any member, and any
   other value fails (§3.5).
 - `members` reads the members together: `Json.Decode.oneOf` over them
   cannot see two members at once, and would let a malformed member
@@ -4334,7 +4339,7 @@ value as two halves with its decimal text.
   level deeper in the registry it is run with (`Proto.Json.writeDeeper`),
   and an `Any` with `Proto.Json.writeAny`, all counting from the
   message's depth, the registry's or 1, whichever is more, as the decoder
-  starts it (`max 1 (Proto.Json.registryDepth types)`), so an `Any` held
+  starts it (`Proto.Json.registryDepth types`), so an `Any` held
   through any messages is counted where the read counts it. Each `Any`
   is a level, and an `Any` past 100 fails with
   `TooDeep`, named `google.protobuf.Any`, exactly where a JSON read of

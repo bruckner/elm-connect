@@ -145,7 +145,7 @@ decodeSetting =
     Proto.Json.message
         (Json.Decode.succeed Setting
             |> Proto.Json.messageField "name" "" Json.Decode.string
-            |> Proto.Json.nestedMessageValueField "value" 0
+            |> Proto.Json.messageNullField "value" (Proto.Json.nestedValue 0)
         )
 
 
@@ -154,13 +154,21 @@ decodeSettingEither =
     Proto.Json.message
         (Json.Decode.succeed Setting
             |> Proto.Json.messageField "name" "" Json.Decode.string
-            |> Proto.Json.nestedMessageValueFieldEither "defaultValue" "default_value" 0
+            |> Proto.Json.messageNullFieldEither "defaultValue" "default_value" (Proto.Json.nestedValue 0)
+        )
+
+
+decodeCount : Decoder (Maybe Int)
+decodeCount =
+    Proto.Json.message
+        (Json.Decode.succeed identity
+            |> Proto.Json.messageNullField "count" Json.Decode.int
         )
 
 
 valueFieldTests : Test
 valueFieldTests =
-    describe "nestedMessageValueField at depth 0"
+    describe "messageNullField of nestedValue at depth 0"
         [ test "a missing key gives Nothing" <|
             \_ -> decodes decodeSetting """{"name":"a"}""" (Setting "a" Nothing)
         , test "null is set, holding null" <|
@@ -185,6 +193,14 @@ valueFieldTests =
                     ()
         , test "both names fail, even when one is null" <|
             \_ -> failsWith decodeSettingEither """{"defaultValue":null,"default_value":1}""" "Expecting \"defaultValue\" or \"default_value\", but got both"
+        , test "null is given to the decoder, which may refuse it" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> fails decodeCount """{"count":null}"""
+                    , \_ -> decodes decodeCount """{"count":2}""" (Just 2)
+                    , \_ -> decodes decodeCount "{}" Nothing
+                    ]
+                    ()
         , test "Nothing leaves the field out, Just null writes null" <|
             \_ ->
                 Expect.all
@@ -270,7 +286,7 @@ checkedOnce =
             |> Proto.Json.messageFieldEither "displayName" "display_name" "" Json.Decode.string
             |> Proto.Json.messageField "constructor" "" Json.Decode.string
             |> Proto.Json.messageField "length" "" Json.Decode.string
-            |> Proto.Json.nestedMessageValueField "value" 0
+            |> Proto.Json.messageNullField "value" (Proto.Json.nestedValue 0)
         )
 
 
@@ -505,9 +521,9 @@ decodeEventKind =
         EventKindUnset
         [ Proto.Json.member "text" (Json.Decode.map EventKindText Json.Decode.string)
         , Proto.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map EventKindTitleChanged Json.Decode.string)
-        , Proto.Json.emptyMemberEither "clearedAll" "cleared_all" EventKindCleared
-        , Proto.Json.nestedValueMember "payload" 0 EventKindPayload
-        , Proto.Json.nullValueMemberEither "nothingAtAll" "nothing_at_all" EventKindNothing
+        , Proto.Json.memberEither "clearedAll" "cleared_all" (Json.Decode.map (\() -> EventKindCleared) Proto.Json.empty)
+        , Proto.Json.nullMember "payload" (Json.Decode.map EventKindPayload (Proto.Json.nestedValue 0))
+        , Proto.Json.nullMemberEither "nothingAtAll" "nothing_at_all" (Json.Decode.map (\() -> EventKindNothing) Proto.Json.nullValue)
         ]
 
 
@@ -558,29 +574,29 @@ oneofTests =
                     "Expecting \"titleChanged\" or \"title_changed\", but got both"
         , test "a member under both its names fails even when one is null" <|
             \_ -> fails decodeEvent """{"titleChanged":"x","title_changed":null}"""
-        , test "emptyMember reads {}" <|
+        , test "an Empty member reads {}" <|
             \_ -> decodes decodeEvent """{"cleared_all":{}}""" (Event "" EventKindCleared)
-        , test "emptyMember reads null as unset" <|
+        , test "an Empty member reads null as unset" <|
             \_ -> decodes decodeEvent """{"clearedAll":null}""" (Event "" EventKindUnset)
-        , test "emptyMember fails on a value that is not an object" <|
+        , test "an Empty member fails on a value that is not an object" <|
             \_ -> fails decodeEvent """{"clearedAll":1}"""
-        , test "nestedValueMember holds any JSON" <|
+        , test "a Value nullMember holds any JSON" <|
             \_ -> decodes decodeEvent """{"payload":[1]}""" (Event "" (EventKindPayload (Proto.Value.ValueList [ Proto.Value.ValueNumber 1 ])))
-        , test "nestedValueMember reads null as set, holding null" <|
+        , test "a Value nullMember reads null as set, holding null" <|
             \_ -> decodes decodeEvent """{"payload":null}""" (Event "" (EventKindPayload Proto.Value.ValueNull))
-        , test "a null nestedValueMember counts against another member" <|
+        , test "a null Value nullMember counts against another member" <|
             \_ ->
                 failsWith decodeEvent
                     """{"payload":null,"text":"t"}"""
                     "Expecting at most one member of oneof \"kind\", but got \"text\" and \"payload\""
-        , test "nullValueMember reads null, the name and the number as set" <|
+        , test "a NullValue nullMember reads null, the name and the number as set" <|
             \_ ->
                 [ """{"nothingAtAll":null}""", """{"nothing_at_all":"NULL_VALUE"}""", """{"nothingAtAll":0}""" ]
                     |> List.map (Json.Decode.decodeString decodeEvent)
                     |> Expect.equal (List.repeat 3 (Ok (Event "" EventKindNothing)))
-        , test "nullValueMember fails on another value" <|
+        , test "a NullValue nullMember fails on another value" <|
             \_ -> failsOnEach decodeEvent [ """{"nothingAtAll":"NOTHING"}""", """{"nothingAtAll":{}}""" ]
-        , test "a null nullValueMember counts against another member" <|
+        , test "a null NullValue nullMember counts against another member" <|
             \_ ->
                 failsWith decodeEvent
                     """{"nothingAtAll":null,"text":"t"}"""
