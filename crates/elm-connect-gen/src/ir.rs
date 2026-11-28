@@ -40,6 +40,7 @@
 mod build;
 pub mod comments;
 mod counted;
+mod cycles;
 pub mod declaration;
 mod graph;
 pub mod nesting;
