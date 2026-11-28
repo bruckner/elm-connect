@@ -69,7 +69,7 @@ defaultDraft =
 -}
 messageDraft : Proto.Message.Message Draft
 messageDraft =
-    Proto.Message.init "drafts.v1.Draft" encodeDraft decodeDraft encodeDraftBytes decodeDraftBytes
+    Proto.Message.init "drafts.v1.Draft" encodeDraft decodeDraft encodeDraftBinary decodeDraftBinary
 
 
 
@@ -136,8 +136,8 @@ decodeDraft =
 
 {-| Encodes a [`Draft`](#Draft) as protobuf binary.
 -}
-encodeDraftBytes : Draft -> Bytes.Encode.Encoder
-encodeDraftBytes value =
+encodeDraftBinary : Draft -> Bytes.Encode.Encoder
+encodeDraftBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.string 2 value.body
@@ -151,8 +151,8 @@ encodeDraftBytes value =
 
 {-| Decodes a [`Draft`](#Draft) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeDraftBytes : Draft -> Proto.Binary.Decoder Draft
-mergeDraftBytes =
+mergeDraftBinary : Draft -> Proto.Binary.Decoder Draft
+mergeDraftBinary =
     Proto.Binary.merge
         "drafts.v1.Draft"
         (\number wire value ->
@@ -201,6 +201,6 @@ mergeDraftBytes =
 
 {-| Decodes a [`Draft`](#Draft) from protobuf binary.
 -}
-decodeDraftBytes : Proto.Binary.Decoder Draft
-decodeDraftBytes =
-    mergeDraftBytes defaultDraft
+decodeDraftBinary : Proto.Binary.Decoder Draft
+decodeDraftBinary =
+    mergeDraftBinary defaultDraft

@@ -92,14 +92,14 @@ defaultMessage =
 -}
 messageMessageRequest : Proto.Message.Message MessageRequest
 messageMessageRequest =
-    Proto.Message.init "msgs.v1.MessageRequest" encodeMessageRequest decodeMessageRequest encodeMessageRequestBytes decodeMessageRequestBytes
+    Proto.Message.init "msgs.v1.MessageRequest" encodeMessageRequest decodeMessageRequest encodeMessageRequestBinary decodeMessageRequestBinary
 
 
 {-| The typed value of [`Message`](#Message): its full name and codecs.
 -}
 messageMessage : Proto.Message.Message Message
 messageMessage =
-    Proto.Message.init "msgs.v1.Message" encodeMessage decodeMessage encodeMessageBytes decodeMessageBytes
+    Proto.Message.init "msgs.v1.Message" encodeMessage decodeMessage encodeMessageBinary decodeMessageBinary
 
 
 
@@ -189,8 +189,8 @@ decodeMessage =
 
 {-| Encodes a [`MessageRequest`](#MessageRequest) as protobuf binary.
 -}
-encodeMessageRequestBytes : MessageRequest -> Bytes.Encode.Encoder
-encodeMessageRequestBytes value =
+encodeMessageRequestBinary : MessageRequest -> Bytes.Encode.Encoder
+encodeMessageRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.string 2 value.id
@@ -200,8 +200,8 @@ encodeMessageRequestBytes value =
 
 {-| Encodes a [`Message`](#Message) as protobuf binary.
 -}
-encodeMessageBytes : Message -> Bytes.Encode.Encoder
-encodeMessageBytes value =
+encodeMessageBinary : Message -> Bytes.Encode.Encoder
+encodeMessageBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
@@ -213,8 +213,8 @@ encodeMessageBytes value =
 
 {-| Decodes a [`MessageRequest`](#MessageRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeMessageRequestBytes : MessageRequest -> Proto.Binary.Decoder MessageRequest
-mergeMessageRequestBytes =
+mergeMessageRequestBinary : MessageRequest -> Proto.Binary.Decoder MessageRequest
+mergeMessageRequestBinary =
     Proto.Binary.merge
         "msgs.v1.MessageRequest"
         (\number wire value ->
@@ -263,15 +263,15 @@ mergeMessageRequestBytes =
 
 {-| Decodes a [`MessageRequest`](#MessageRequest) from protobuf binary.
 -}
-decodeMessageRequestBytes : Proto.Binary.Decoder MessageRequest
-decodeMessageRequestBytes =
-    mergeMessageRequestBytes defaultMessageRequest
+decodeMessageRequestBinary : Proto.Binary.Decoder MessageRequest
+decodeMessageRequestBinary =
+    mergeMessageRequestBinary defaultMessageRequest
 
 
 {-| Decodes a [`Message`](#Message) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeMessageBytes : Message -> Proto.Binary.Decoder Message
-mergeMessageBytes =
+mergeMessageBinary : Message -> Proto.Binary.Decoder Message
+mergeMessageBinary =
     Proto.Binary.merge
         "msgs.v1.Message"
         (\number wire value ->
@@ -294,9 +294,9 @@ mergeMessageBytes =
 
 {-| Decodes a [`Message`](#Message) from protobuf binary.
 -}
-decodeMessageBytes : Proto.Binary.Decoder Message
-decodeMessageBytes =
-    mergeMessageBytes defaultMessage
+decodeMessageBinary : Proto.Binary.Decoder Message
+decodeMessageBinary =
+    mergeMessageBinary defaultMessage
 
 
 

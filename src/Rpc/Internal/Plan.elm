@@ -3,8 +3,8 @@ module Rpc.Internal.Plan exposing (Plan, Reader(..), checked, plan, refused, toS
 {-| How a call goes over a client's protocol: the one place a call's method
 meets the protocol's functions. Not exposed; `Rpc` sends through it.
 
-A call's [`plan`](#plan) is what the protocol's kind of wire, text or bytes,
-makes of the method's codecs: monomorphic from there on, so the rest of
+A call's [`plan`](#plan) is what the protocol's functions, for text or bytes,
+make of the method's codecs: monomorphic from there on, so the rest of
 sending is ordinary functions over it. The only branches every program
 carries are that two-way choice here and the choice of elm/http's reader of
 text or of bytes where the answer is read.
@@ -12,7 +12,7 @@ text or of bytes where the answer is read.
 A method holds both codec halves, the one it was not built with a filler
 (`Proto.Internal.Method`), and the codec phantom keeps a protocol from
 meeting a method whose half it reads is a filler, so the plan reads the half
-its wire speaks without asking which halves are real.
+its functions speak without asking which halves are real.
 
 -}
 
@@ -30,7 +30,7 @@ import Rpc.Internal.Call exposing (Call(..))
 import Rpc.Internal.Client exposing (Client(..))
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Limit as Limit
-import Rpc.Internal.Protocol exposing (GoodText, Protocol(..), Size, Wire(..))
+import Rpc.Internal.Protocol exposing (Functions(..), GoodText, Protocol(..), Size)
 import Rpc.Internal.Retry as Retry
 import Rpc.Internal.Status as Status
 import Rpc.Request exposing (Request)
@@ -133,7 +133,7 @@ make forSend (Client cl over _ registry) (Call c) =
             }
     in
     case functions of
-        Text wire ->
+        Text textFunctions ->
             let
                 routeOf =
                     if p.routed then
@@ -187,7 +187,7 @@ make forSend (Client cl over _ registry) (Call c) =
                         ( encode, \() -> Result.map routeWith (encode ()) )
 
                 build json maybeRoute =
-                    wire.build p.options (settings ()) maybeRoute (\() -> json)
+                    textFunctions.build p.options (settings ()) maybeRoute (\() -> json)
             in
             { request = \() -> Result.map2 build (encoded ()) (route ())
             , unwritten = \() -> build Json.Encode.null (routeWith Json.Encode.null)
@@ -211,14 +211,14 @@ make forSend (Client cl over _ registry) (Call c) =
                 \() ->
                     case encoded () of
                         Ok json ->
-                            wire.tooLarge p.options (\() -> json)
+                            textFunctions.tooLarge p.options (\() -> json)
 
                         Err _ ->
                             Nothing
             , reader =
                 TextReader
                     (\answer ->
-                        wire.message wire.overRead p.options responseBody answer
+                        textFunctions.message textFunctions.overRead p.options responseBody answer
                             |> Result.mapError (Status.completeDetails registry)
                             |> Result.andThen
                                 (\good ->
@@ -228,29 +228,29 @@ make forSend (Client cl over _ registry) (Call c) =
                     )
             , binding = Maybe.map (\_ -> c.binding) routeOf
             , responseBody = responseBody
-            , timeoutHeader = wire.timeoutHeader routed
+            , timeoutHeader = textFunctions.timeoutHeader routed
             , base64 = Nothing
             }
 
-        Binary wire ->
+        Bytes bytesFunctions ->
             let
                 encoder () =
                     m.binary.encode c.message
 
                 request () =
-                    wire.build wire.encode wire.base64 p.options (settings ()) (encoder ())
+                    bytesFunctions.build bytesFunctions.encode bytesFunctions.base64 p.options (settings ()) (encoder ())
             in
             { request = \() -> Ok (request ())
             , unwritten = request
             , invalid = \() -> Nothing
             , unencodable = \() -> Nothing
-            , tooLarge = \() -> wire.tooLarge wire.encodedWidth p.options encoder
+            , tooLarge = \() -> bytesFunctions.tooLarge bytesFunctions.encodedWidth p.options encoder
             , reader =
                 BytesReader
                     (\answer ->
                         let
                             ( metadata, read ) =
-                                wire.message (wire.overRead wire.width) p.options (m.service ++ "/" ++ m.name) answer
+                                bytesFunctions.message (bytesFunctions.overRead bytesFunctions.width) p.options (m.service ++ "/" ++ m.name) answer
                         in
                         ( metadata
                         , Result.mapError (Status.completeDetails registry) read
@@ -267,8 +267,8 @@ make forSend (Client cl over _ registry) (Call c) =
                     )
             , binding = Nothing
             , responseBody = Nothing
-            , timeoutHeader = wire.timeoutHeader
-            , base64 = Just wire.base64
+            , timeoutHeader = bytesFunctions.timeoutHeader
+            , base64 = Just bytesFunctions.base64
             }
 
 

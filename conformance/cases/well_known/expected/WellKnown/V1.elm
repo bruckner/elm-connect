@@ -188,7 +188,7 @@ defaultEvent =
 -}
 messageEvent : Proto.Message.Message Event
 messageEvent =
-    Proto.Message.init "well_known.v1.Event" encodeEvent decodeEvent encodeEventBytes decodeEventBytes
+    Proto.Message.init "well_known.v1.Event" encodeEvent decodeEvent encodeEventBinary decodeEventBinary
 
 
 
@@ -389,8 +389,8 @@ decodeNestedEventWhen depth =
 
 {-| Encodes an [`Event`](#Event) as protobuf binary.
 -}
-encodeEventBytes : Event -> Bytes.Encode.Encoder
-encodeEventBytes value =
+encodeEventBinary : Event -> Bytes.Encode.Encoder
+encodeEventBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.optional Proto.Binary.timestamp 1 value.createdAt
         , Proto.Binary.optional Proto.Binary.duration 2 value.timeout
@@ -455,8 +455,8 @@ encodeEventBytes value =
 
 {-| Encodes an [`EventWhen`](#EventWhen) as protobuf binary: its set member's field.
 -}
-encodeEventWhenBytes : EventWhen -> Bytes.Encode.Encoder
-encodeEventWhenBytes value =
+encodeEventWhenBinary : EventWhen -> Bytes.Encode.Encoder
+encodeEventWhenBinary value =
     case value of
         EventWhenUnset ->
             Bytes.Encode.sequence []
@@ -486,15 +486,15 @@ encodeEventWhenBytes value =
 
 {-| Decodes an [`Event`](#Event) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeEventBytes : Event -> Proto.Binary.Decoder Event
-mergeEventBytes =
-    mergeNestedEventBytes 1
+mergeEventBinary : Event -> Proto.Binary.Decoder Event
+mergeEventBinary =
+    mergeNestedEventBinary 1
 
 
-{-| [`mergeEventBytes`](#mergeEventBytes) for an [`Event`](#Event) held `depth` levels deep.
+{-| [`mergeEventBinary`](#mergeEventBinary) for an [`Event`](#Event) held `depth` levels deep.
 -}
-mergeNestedEventBytes : Int -> Event -> Proto.Binary.Decoder Event
-mergeNestedEventBytes depth =
+mergeNestedEventBinary : Int -> Event -> Proto.Binary.Decoder Event
+mergeNestedEventBinary depth =
     Proto.Binary.merge
         "well_known.v1.Event"
         (\number wire value ->
@@ -2069,6 +2069,6 @@ mergeNestedEventBytes depth =
 
 {-| Decodes an [`Event`](#Event) from protobuf binary.
 -}
-decodeEventBytes : Proto.Binary.Decoder Event
-decodeEventBytes =
-    mergeEventBytes defaultEvent
+decodeEventBinary : Proto.Binary.Decoder Event
+decodeEventBinary =
+    mergeEventBinary defaultEvent

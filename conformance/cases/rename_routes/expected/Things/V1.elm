@@ -109,21 +109,21 @@ defaultGetThingRequest =
 -}
 messageThing : Proto.Message.Message Thing
 messageThing =
-    Proto.Message.init "things.v1.Thing" encodeThing decodeThing encodeThingBytes decodeThingBytes
+    Proto.Message.init "things.v1.Thing" encodeThing decodeThing encodeThingBinary decodeThingBinary
 
 
 {-| The typed value of [`Criteria`](#Criteria): its full name and codecs.
 -}
 messageCriteria : Proto.Message.Message Criteria
 messageCriteria =
-    Proto.Message.init "things.v1.Filter" encodeCriteria decodeCriteria encodeCriteriaBytes decodeCriteriaBytes
+    Proto.Message.init "things.v1.Filter" encodeCriteria decodeCriteria encodeCriteriaBinary decodeCriteriaBinary
 
 
 {-| The typed value of [`GetThingRequest`](#GetThingRequest): its full name and codecs.
 -}
 messageGetThingRequest : Proto.Message.Message GetThingRequest
 messageGetThingRequest =
-    Proto.Message.init "things.v1.GetThingRequest" encodeGetThingRequest decodeGetThingRequest encodeGetThingRequestBytes decodeGetThingRequestBytes
+    Proto.Message.init "things.v1.GetThingRequest" encodeGetThingRequest decodeGetThingRequest encodeGetThingRequestBinary decodeGetThingRequestBinary
 
 
 
@@ -236,8 +236,8 @@ decodeGetThingRequest =
 
 {-| Encodes a [`Thing`](#Thing) as protobuf binary.
 -}
-encodeThingBytes : Thing -> Bytes.Encode.Encoder
-encodeThingBytes value =
+encodeThingBinary : Thing -> Bytes.Encode.Encoder
+encodeThingBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
@@ -245,8 +245,8 @@ encodeThingBytes value =
 
 {-| Encodes a [`Criteria`](#Criteria) as protobuf binary.
 -}
-encodeCriteriaBytes : Criteria -> Bytes.Encode.Encoder
-encodeCriteriaBytes value =
+encodeCriteriaBinary : Criteria -> Bytes.Encode.Encoder
+encodeCriteriaBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.status
         ]
@@ -254,12 +254,12 @@ encodeCriteriaBytes value =
 
 {-| Encodes a [`GetThingRequest`](#GetThingRequest) as protobuf binary.
 -}
-encodeGetThingRequestBytes : GetThingRequest -> Bytes.Encode.Encoder
-encodeGetThingRequestBytes value =
+encodeGetThingRequestBinary : GetThingRequest -> Bytes.Encode.Encoder
+encodeGetThingRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.resource
         , Proto.Binary.implicit Proto.Binary.int32 2 value.limit
-        , Proto.Binary.optional (Proto.Binary.embedded encodeCriteriaBytes mergeCriteriaBytes defaultCriteria) 3 value.filter
+        , Proto.Binary.optional (Proto.Binary.embedded encodeCriteriaBinary mergeCriteriaBinary defaultCriteria) 3 value.filter
         ]
 
 
@@ -269,8 +269,8 @@ encodeGetThingRequestBytes value =
 
 {-| Decodes a [`Thing`](#Thing) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeThingBytes : Thing -> Proto.Binary.Decoder Thing
-mergeThingBytes =
+mergeThingBinary : Thing -> Proto.Binary.Decoder Thing
+mergeThingBinary =
     Proto.Binary.merge
         "things.v1.Thing"
         (\number wire value ->
@@ -293,15 +293,15 @@ mergeThingBytes =
 
 {-| Decodes a [`Thing`](#Thing) from protobuf binary.
 -}
-decodeThingBytes : Proto.Binary.Decoder Thing
-decodeThingBytes =
-    mergeThingBytes defaultThing
+decodeThingBinary : Proto.Binary.Decoder Thing
+decodeThingBinary =
+    mergeThingBinary defaultThing
 
 
 {-| Decodes a [`Criteria`](#Criteria) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeCriteriaBytes : Criteria -> Proto.Binary.Decoder Criteria
-mergeCriteriaBytes =
+mergeCriteriaBinary : Criteria -> Proto.Binary.Decoder Criteria
+mergeCriteriaBinary =
     Proto.Binary.merge
         "things.v1.Filter"
         (\number wire value ->
@@ -324,15 +324,15 @@ mergeCriteriaBytes =
 
 {-| Decodes a [`Criteria`](#Criteria) from protobuf binary.
 -}
-decodeCriteriaBytes : Proto.Binary.Decoder Criteria
-decodeCriteriaBytes =
-    mergeCriteriaBytes defaultCriteria
+decodeCriteriaBinary : Proto.Binary.Decoder Criteria
+decodeCriteriaBinary =
+    mergeCriteriaBinary defaultCriteria
 
 
 {-| Decodes a [`GetThingRequest`](#GetThingRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeGetThingRequestBytes : GetThingRequest -> Proto.Binary.Decoder GetThingRequest
-mergeGetThingRequestBytes =
+mergeGetThingRequestBinary : GetThingRequest -> Proto.Binary.Decoder GetThingRequest
+mergeGetThingRequestBinary =
     Proto.Binary.merge
         "things.v1.GetThingRequest"
         (\number wire value ->
@@ -363,7 +363,7 @@ mergeGetThingRequestBytes =
 
                 3 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeCriteriaBytes mergeCriteriaBytes defaultCriteria)
+                        (Proto.Binary.embedded encodeCriteriaBinary mergeCriteriaBinary defaultCriteria)
                         value.filter
                         (\v ->
                             { resource = value.resource
@@ -382,9 +382,9 @@ mergeGetThingRequestBytes =
 
 {-| Decodes a [`GetThingRequest`](#GetThingRequest) from protobuf binary.
 -}
-decodeGetThingRequestBytes : Proto.Binary.Decoder GetThingRequest
-decodeGetThingRequestBytes =
-    mergeGetThingRequestBytes defaultGetThingRequest
+decodeGetThingRequestBinary : Proto.Binary.Decoder GetThingRequest
+decodeGetThingRequestBinary =
+    mergeGetThingRequestBinary defaultGetThingRequest
 
 
 

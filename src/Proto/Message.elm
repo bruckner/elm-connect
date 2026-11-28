@@ -61,7 +61,7 @@ a message that holds no `google.protobuf.Any`:
 
     messageNote : Proto.Message.Message Note
     messageNote =
-        Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+        Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBinary decodeNoteBinary
 
 The binary decoder is a [`Proto.Binary.Decoder`](Proto-Binary#Decoder), which
 the package site may show as `Proto.Internal.Binary.Decoder`.
@@ -90,7 +90,7 @@ registry (`UnregisteredType`), or its binary is not that type's message
 (`BadBinary`), at any depth.
 
     messageEnvelope =
-        Proto.Message.initWith "notes.v1.Envelope" encodeEnvelope decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
+        Proto.Message.initWith "notes.v1.Envelope" encodeEnvelope decodeEnvelopeWith encodeEnvelopeBinary decodeEnvelopeBinary
 
 -}
 initWith : String -> (a -> Proto.Json.Encoder.Encoder Proto.Error.Error) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a

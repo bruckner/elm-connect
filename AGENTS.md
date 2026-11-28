@@ -56,7 +56,7 @@ and macOS. In order:
   keeps for a test counts as used; generated modules are not reviewed.
 - `error-details-check`: the hand-written `Proto.ErrorDetails` compiled
   and tested beside the generator's `google/rpc/error_details.proto`
-  under the default `wire=both`; on a failure, port the difference from the
+  under the default `codec=both`; on a failure, port the difference from the
   generated module by hand (conformance/README.md, "Error details").
 - `snippets`: every tagged code block in the README, the guides and the
   example's walkthrough is an excerpt of the file it names.

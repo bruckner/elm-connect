@@ -1,10 +1,10 @@
-//! Protobuf binary codecs, under every `wire` option: per
-//! message `encodeFooBytes : Foo -> Bytes.Encode.Encoder`,
-//! `mergeFooBytes : Foo -> Proto.Binary.Decoder Foo` (reading into a value
+//! Protobuf binary codecs, under every `codec` option: per
+//! message `encodeFooBinary : Foo -> Bytes.Encode.Encoder`,
+//! `mergeFooBinary : Foo -> Proto.Binary.Decoder Foo` (reading into a value
 //! read before, as protobuf merges a message arriving twice) and
-//! `decodeFooBytes : Proto.Binary.Decoder Foo` (`mergeFooBytes` of the
-//! default), per enum its number conversions `encodeBarBytes : Bar -> Int`
-//! and `decodeBarBytes : Int -> Bar`, per oneof an encoder of its set
+//! `decodeFooBinary : Proto.Binary.Decoder Foo` (`mergeFooBinary` of the
+//! default), per enum its number conversions `encodeBarBinary : Bar -> Int`
+//! and `decodeBarBinary : Int -> Bar`, per oneof an encoder of its set
 //! member, and per recursion wrapper a pair that unwraps and wraps.
 //!
 //! An encoder is `Bytes.Encode.sequence` of one `Proto.Binary` field
@@ -41,7 +41,7 @@ use crate::ir::{
     Cardinality, Enum, Field, MapKey, Message, OneofVariant, ScalarKind, TypeRef, WellKnown,
     Wrapper,
 };
-use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER, UNKNOWN_FIELDS, default_name, nested};
+use crate::naming::{self, ENCODER_ARGUMENT, ONEOF_MEMBER, UNKNOWN_FIELDS, default_name, nested};
 use crate::options::Int64;
 
 /// elm/bytes' encoders.
@@ -63,19 +63,19 @@ const KEY: &str = "k";
 const DEPTH: &str = "depth";
 
 /// The binary codec's name beside a JSON codec's: `encodeNote` becomes
-/// `encodeNoteBytes`.
-pub(super) fn bytes_name(json_name: String) -> String {
-    format!("{json_name}Bytes")
+/// `encodeNoteBinary` ([`naming::BINARY_SUFFIX`]).
+pub(super) fn binary_name(json_name: String) -> String {
+    format!("{json_name}{}", naming::BINARY_SUFFIX)
 }
 
 /// The binary merge beside a decoder's name: `decodeNote` becomes
-/// `mergeNoteBytes`. `merge` is a prefix like the others
+/// `mergeNoteBinary`. `merge` is a prefix like the others
 /// (`crate::naming::default_name`), none of which it begins or ends.
 fn merge_name(decoder_name: String) -> String {
     let type_name = decoder_name
         .strip_prefix("decode")
         .expect("a decoder's name starts with decode");
-    format!("merge{type_name}Bytes")
+    format!("merge{type_name}{}", naming::BINARY_SUFFIX)
 }
 
 /// The runtime codec of a scalar of `kind`, held as `holding` says.
@@ -295,14 +295,14 @@ impl Emitter {
                     recursive,
                     [
                         var(DEPTH),
-                        var(bytes_name(wrapper.encoder_name())),
+                        var(binary_name(wrapper.encoder_name())),
                         var(nested(merge_name(wrapper.decoder_name()))),
                         apply(var(wrapper.elm_name.clone()), [default]),
                     ],
                 )
             }
             (TypeRef::Message(name), None) if deep => {
-                let encode = self.generated_value(&name.module, bytes_name(name.encoder_name()));
+                let encode = self.generated_value(&name.module, binary_name(name.encoder_name()));
                 let decode =
                     self.generated_value(&name.module, nested(merge_name(name.decoder_name())));
                 let default = self.generated_value(&name.module, default_name(&name.name));
@@ -315,7 +315,7 @@ impl Emitter {
                 apply(
                     embedded,
                     [
-                        var(bytes_name(wrapper.encoder_name())),
+                        var(binary_name(wrapper.encoder_name())),
                         var(merge_name(wrapper.decoder_name())),
                         apply(var(wrapper.elm_name.clone()), [default]),
                     ],
@@ -323,13 +323,13 @@ impl Emitter {
             }
             (TypeRef::Scalar(kind), _) => self.binary(scalar_codec(*kind, holding)),
             (TypeRef::Enum { name, .. }, _) => {
-                let encode = self.generated_value(&name.module, bytes_name(name.encoder_name()));
-                let decode = self.generated_value(&name.module, bytes_name(name.decoder_name()));
+                let encode = self.generated_value(&name.module, binary_name(name.encoder_name()));
+                let decode = self.generated_value(&name.module, binary_name(name.decoder_name()));
                 let codec = self.binary("enum");
                 apply(codec, [encode, decode])
             }
             (TypeRef::Message(name), None) => {
-                let encode = self.generated_value(&name.module, bytes_name(name.encoder_name()));
+                let encode = self.generated_value(&name.module, binary_name(name.encoder_name()));
                 let decode = self.generated_value(&name.module, merge_name(name.decoder_name()));
                 let default = self.generated_value(&name.module, default_name(&name.name));
                 let embedded = self.binary("embedded");
@@ -381,8 +381,8 @@ impl Emitter {
         Type::Function(Box::new(of), Box::new(decoder))
     }
 
-    /// `encodeFooBytes : Foo -> Bytes.Encode.Encoder`.
-    pub(super) fn message_encoder_bytes(&mut self, shape: &MessageShape) -> Decl {
+    /// `encodeFooBinary : Foo -> Bytes.Encode.Encoder`.
+    pub(super) fn message_encoder_binary(&mut self, shape: &MessageShape) -> Decl {
         let mut items: Vec<(u32, Expr)> = Vec::new();
         for &(field, field_shape) in &shape.fields {
             let value = access(var(ENCODER_ARGUMENT), field.elm_name.clone());
@@ -450,7 +450,7 @@ impl Emitter {
                     .map_or(0, |(variant, _)| variant.number);
                 items.push((
                     first,
-                    apply(var(bytes_name(oneof.oneof.encoder_name())), [value()]),
+                    apply(var(binary_name(oneof.oneof.encoder_name())), [value()]),
                 ));
                 continue;
             }
@@ -459,7 +459,7 @@ impl Emitter {
                 let nothing = apply(self.reference((BYTES_ENCODE, "sequence")), [list([])]);
                 let arms: Vec<(Pattern, Expr)> = run
                     .into_iter()
-                    .map(|(variant, member)| self.oneof_member_bytes(variant, member))
+                    .map(|(variant, member)| self.oneof_member_binary(variant, member))
                     .chain(std::iter::once((Pattern::Wildcard, nothing)))
                     .collect();
                 items.push((first, case(value(), arms)));
@@ -486,7 +486,7 @@ impl Emitter {
                 "Encodes {} as protobuf binary.",
                 docs::a_local(&shape.message.elm_name)
             )),
-            name: bytes_name(shape.message.encoder_name()),
+            name: binary_name(shape.message.encoder_name()),
             annotation: Type::Function(
                 Box::new(ty(shape.message.elm_name.clone(), [])),
                 Box::new(encoder),
@@ -501,16 +501,16 @@ impl Emitter {
         }
     }
 
-    /// `decodeFooBytes : Proto.Binary.Decoder Foo`, `mergeFooBytes` of the
+    /// `decodeFooBinary : Proto.Binary.Decoder Foo`, `mergeFooBinary` of the
     /// default.
-    pub(super) fn message_decoder_bytes(&mut self, shape: &MessageShape) -> Decl {
+    pub(super) fn message_decoder_binary(&mut self, shape: &MessageShape) -> Decl {
         let annotation = self.bytes_decoder_type(ty(shape.message.elm_name.clone(), []));
         Decl::Value {
             doc: Some(format!(
                 "Decodes {} from protobuf binary.",
                 docs::a_local(&shape.message.elm_name)
             )),
-            name: bytes_name(shape.message.decoder_name()),
+            name: binary_name(shape.message.decoder_name()),
             annotation,
             params: Vec::new(),
             body: apply(
@@ -520,16 +520,16 @@ impl Emitter {
         }
     }
 
-    /// `mergeFooBytes : Foo -> Proto.Binary.Decoder Foo`: a `Foo` read
+    /// `mergeFooBinary : Foo -> Proto.Binary.Decoder Foo`: a `Foo` read
     /// into the one given, as protobuf merges a message arriving twice. A
-    /// merge of a message that nests is `mergeNestedFooBytes 1`, and
-    /// `mergeNestedFooBytes : Int -> Foo -> Proto.Binary.Decoder Foo` is
+    /// merge of a message that nests is `mergeNestedFooBinary 1`, and
+    /// `mergeNestedFooBinary : Int -> Foo -> Proto.Binary.Decoder Foo` is
     /// given the nesting depth, which the messages it holds that nest read
     /// at one more: for a message on a cycle `Proto.Binary.memo (\depth ->
     /// merge)`, which makes the merge for each depth once, and for one on
-    /// no cycle a function of the depth, `mergeNestedNoteBytes depth =
+    /// no cycle a function of the depth, `mergeNestedNoteBinary depth =
     /// merge`, made when a holder reads it.
-    pub(super) fn message_merge_bytes(&mut self, shape: &MessageShape) -> Vec<Decl> {
+    pub(super) fn message_merge_binary(&mut self, shape: &MessageShape) -> Vec<Decl> {
         self.binary_depth = self.counts(shape.message);
         let decls = self.message_merge_bytes_body(shape);
         self.binary_depth = false;
@@ -741,7 +741,11 @@ impl Emitter {
 
     /// The `case` arm that writes a oneof's member: its field, written
     /// whatever its value.
-    fn oneof_member_bytes(&mut self, variant: &OneofVariant, value: ValueShape) -> (Pattern, Expr) {
+    fn oneof_member_binary(
+        &mut self,
+        variant: &OneofVariant,
+        value: ValueShape,
+    ) -> (Pattern, Expr) {
         let holding = field_holding(variant.jstype, self.holding);
         let codec = self.binary_codec(&variant.ty, holding, None, false);
         let number = int(variant.number.into());
@@ -759,9 +763,9 @@ impl Emitter {
         }
     }
 
-    /// `encodeFooKindBytes : FooKind -> Bytes.Encode.Encoder`: the set
+    /// `encodeFooKindBinary : FooKind -> Bytes.Encode.Encoder`: the set
     /// member, written whatever its value, or nothing when unset.
-    pub(super) fn oneof_encoder_bytes(&mut self, shape: &OneofShape) -> Decl {
+    pub(super) fn oneof_encoder_binary(&mut self, shape: &OneofShape) -> Decl {
         let sequence = self.reference((BYTES_ENCODE, "sequence"));
         let unset = (
             pctor(shape.oneof.unset_ctor.clone(), []),
@@ -770,7 +774,7 @@ impl Emitter {
         let members: Vec<(Pattern, Expr)> = shape
             .variants
             .iter()
-            .map(|&(variant, value)| self.oneof_member_bytes(variant, value))
+            .map(|&(variant, value)| self.oneof_member_binary(variant, value))
             .collect();
         let encoder = self.bytes_encoder_type();
         Decl::Value {
@@ -778,7 +782,7 @@ impl Emitter {
                 "Encodes {} as protobuf binary: its set member's field.",
                 docs::a_local(&shape.oneof.elm_type_name)
             )),
-            name: bytes_name(shape.oneof.encoder_name()),
+            name: binary_name(shape.oneof.encoder_name()),
             annotation: Type::Function(
                 Box::new(ty(shape.oneof.elm_type_name.clone(), [])),
                 Box::new(encoder),
@@ -788,31 +792,31 @@ impl Emitter {
         }
     }
 
-    /// `encodeNode_Bytes (Node_ value) = encodeNodeBytes value`.
-    pub(super) fn wrapper_encoder_bytes(&mut self, message: &Message, wrapper: &Wrapper) -> Decl {
+    /// `encodeNode_Binary (Node_ value) = encodeNodeBinary value`.
+    pub(super) fn wrapper_encoder_binary(&mut self, message: &Message, wrapper: &Wrapper) -> Decl {
         let encoder = self.bytes_encoder_type();
         Decl::Value {
             doc: Some(format!(
                 "Encodes {} as protobuf binary.",
                 docs::a_local(&wrapper.elm_name)
             )),
-            name: bytes_name(wrapper.encoder_name()),
+            name: binary_name(wrapper.encoder_name()),
             annotation: Type::Function(
                 Box::new(ty(wrapper.elm_name.clone(), [])),
                 Box::new(encoder),
             ),
             params: vec![pctor(wrapper.elm_name.clone(), [pvar(ENCODER_ARGUMENT)])],
             body: apply(
-                var(bytes_name(message.encoder_name())),
+                var(binary_name(message.encoder_name())),
                 [var(ENCODER_ARGUMENT)],
             ),
         }
     }
 
-    /// `mergeNode_Bytes (Node_ value) = Proto.Binary.map Node_
-    /// (mergeNodeBytes value)`: a function, so the merges of a cycle refer
+    /// `mergeNode_Binary (Node_ value) = Proto.Binary.map Node_
+    /// (mergeNodeBinary value)`: a function, so the merges of a cycle refer
     /// to each other through functions only.
-    pub(super) fn wrapper_decoder_bytes(
+    pub(super) fn wrapper_decoder_binary(
         &mut self,
         message: &Message,
         wrapper: &Wrapper,
@@ -864,9 +868,9 @@ impl Emitter {
         vec![plain, nested_decl]
     }
 
-    /// `encodeStatusBytes : Status -> Int`: each constructor's number, the
+    /// `encodeStatusBinary : Status -> Int`: each constructor's number, the
     /// first declared for an aliased number.
-    pub(super) fn enum_encoder_bytes(&mut self, enumeration: &Enum) -> Decl {
+    pub(super) fn enum_encoder_binary(&mut self, enumeration: &Enum) -> Decl {
         let branches: Vec<(Pattern, Expr)> = enumeration
             .values()
             .map(|value| (pctor(value.elm_ctor.clone(), []), int(value.number.into())))
@@ -876,7 +880,7 @@ impl Emitter {
                 "The number protobuf binary writes {} as.",
                 docs::a_local(&enumeration.elm_name)
             )),
-            name: bytes_name(enumeration.encoder_name()),
+            name: binary_name(enumeration.encoder_name()),
             annotation: Type::Function(
                 Box::new(ty(enumeration.elm_name.clone(), [])),
                 Box::new(ty(self.core("Int"), [])),
@@ -886,10 +890,10 @@ impl Emitter {
         }
     }
 
-    /// `decodeStatusBytes : Int -> Status`: an unknown number reads as the
+    /// `decodeStatusBinary : Int -> Status`: an unknown number reads as the
     /// zero value, as the JSON decoder reads one. Elm has no negative
     /// literal patterns, so negative numbers are tested in the fallback.
-    pub(super) fn enum_decoder_bytes(&mut self, enumeration: &Enum) -> Decl {
+    pub(super) fn enum_decoder_binary(&mut self, enumeration: &Enum) -> Decl {
         let zero = var(enumeration.zero().elm_ctor.clone());
         let negatives = enumeration
             .values()
@@ -918,7 +922,7 @@ impl Emitter {
                 "{} from the number protobuf binary carries.",
                 docs::a_local_capital(&enumeration.elm_name)
             )),
-            name: bytes_name(enumeration.decoder_name()),
+            name: binary_name(enumeration.decoder_name()),
             annotation: Type::Function(
                 Box::new(ty(self.core("Int"), [])),
                 Box::new(ty(enumeration.elm_name.clone(), [])),
@@ -929,11 +933,11 @@ impl Emitter {
     }
 
     /// The binary encoder of a method's request type: the generated
-    /// `encodeFooBytes`, or a well-known type's runtime codec's.
-    pub(super) fn request_encoder_bytes(&mut self, ty: &TypeRef) -> Expr {
+    /// `encodeFooBinary`, or a well-known type's runtime codec's.
+    pub(super) fn request_encoder_binary(&mut self, ty: &TypeRef) -> Expr {
         match ty {
             TypeRef::Message(name) => {
-                self.generated_value(&name.module, bytes_name(name.encoder_name()))
+                self.generated_value(&name.module, binary_name(name.encoder_name()))
             }
             TypeRef::WellKnown(known) => {
                 let codec = self.binary(well_known_codec(*known, self.holding));
@@ -946,11 +950,11 @@ impl Emitter {
     }
 
     /// The binary decoder of a method's response type, as
-    /// [`Self::request_encoder_bytes`] finds the encoder.
-    pub(super) fn response_decoder_bytes(&mut self, ty: &TypeRef) -> Expr {
+    /// [`Self::request_encoder_binary`] finds the encoder.
+    pub(super) fn response_decoder_binary(&mut self, ty: &TypeRef) -> Expr {
         match ty {
             TypeRef::Message(name) => {
-                self.generated_value(&name.module, bytes_name(name.decoder_name()))
+                self.generated_value(&name.module, binary_name(name.decoder_name()))
             }
             TypeRef::WellKnown(known) => {
                 let codec = self.binary(well_known_codec(*known, self.holding));

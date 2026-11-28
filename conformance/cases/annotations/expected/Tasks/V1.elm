@@ -139,14 +139,14 @@ enumState =
 -}
 messageTask : Proto.Message.Message Task
 messageTask =
-    Proto.Message.init "tasks.v1.Task" encodeTask decodeTask encodeTaskBytes decodeTaskBytes
+    Proto.Message.init "tasks.v1.Task" encodeTask decodeTask encodeTaskBinary decodeTaskBinary
 
 
 {-| The typed value of [`GetTaskRequest`](#GetTaskRequest): its full name and codecs.
 -}
 messageGetTaskRequest : Proto.Message.Message GetTaskRequest
 messageGetTaskRequest =
-    Proto.Message.init "tasks.v1.GetTaskRequest" encodeGetTaskRequest decodeGetTaskRequest encodeGetTaskRequestBytes decodeGetTaskRequestBytes
+    Proto.Message.init "tasks.v1.GetTaskRequest" encodeGetTaskRequest decodeGetTaskRequest encodeGetTaskRequestBinary decodeGetTaskRequestBinary
 
 
 
@@ -303,8 +303,8 @@ decodeGetTaskRequest =
 
 {-| The number protobuf binary writes a [`State`](#State) as.
 -}
-encodeStateBytes : State -> Int
-encodeStateBytes value =
+encodeStateBinary : State -> Int
+encodeStateBinary value =
     case value of
         StateUnspecified ->
             0
@@ -318,24 +318,24 @@ encodeStateBytes value =
 
 {-| Encodes a [`Task`](#Task) as protobuf binary.
 -}
-encodeTaskBytes : Task -> Bytes.Encode.Encoder
-encodeTaskBytes value =
+encodeTaskBinary : Task -> Bytes.Encode.Encoder
+encodeTaskBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.string 2 value.title
-        , Proto.Binary.implicit (Proto.Binary.enum encodeStateBytes decodeStateBytes) 3 value.state
+        , Proto.Binary.implicit (Proto.Binary.enum encodeStateBinary decodeStateBinary) 3 value.state
         , Proto.Binary.list Proto.Binary.string 4 value.labels
         , Proto.Binary.implicit Proto.Binary.string 5 value.owner
         , Proto.Binary.implicit Proto.Binary.string 6 value.notes
-        , encodeTaskDueBytes value.due
+        , encodeTaskDueBinary value.due
         , Proto.Binary.implicit Proto.Binary.string 9 value.made
         ]
 
 
 {-| Encodes a [`TaskDue`](#TaskDue) as protobuf binary: its set member's field.
 -}
-encodeTaskDueBytes : TaskDue -> Bytes.Encode.Encoder
-encodeTaskDueBytes value =
+encodeTaskDueBinary : TaskDue -> Bytes.Encode.Encoder
+encodeTaskDueBinary value =
     case value of
         TaskDueUnset ->
             Bytes.Encode.sequence []
@@ -349,8 +349,8 @@ encodeTaskDueBytes value =
 
 {-| Encodes a [`GetTaskRequest`](#GetTaskRequest) as protobuf binary.
 -}
-encodeGetTaskRequestBytes : GetTaskRequest -> Bytes.Encode.Encoder
-encodeGetTaskRequestBytes value =
+encodeGetTaskRequestBinary : GetTaskRequest -> Bytes.Encode.Encoder
+encodeGetTaskRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
@@ -362,8 +362,8 @@ encodeGetTaskRequestBytes value =
 
 {-| A [`State`](#State) from the number protobuf binary carries.
 -}
-decodeStateBytes : Int -> State
-decodeStateBytes number =
+decodeStateBinary : Int -> State
+decodeStateBinary number =
     case number of
         1 ->
             StateOpen
@@ -377,8 +377,8 @@ decodeStateBytes number =
 
 {-| Decodes a [`Task`](#Task) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeTaskBytes : Task -> Proto.Binary.Decoder Task
-mergeTaskBytes =
+mergeTaskBinary : Task -> Proto.Binary.Decoder Task
+mergeTaskBinary =
     Proto.Binary.merge
         "tasks.v1.Task"
         (\number wire value ->
@@ -419,7 +419,7 @@ mergeTaskBytes =
 
                 3 ->
                     Proto.Binary.field
-                        (Proto.Binary.enum encodeStateBytes decodeStateBytes)
+                        (Proto.Binary.enum encodeStateBinary decodeStateBinary)
                         (\v ->
                             { name = value.name
                             , title = value.title
@@ -555,15 +555,15 @@ mergeTaskBytes =
 
 {-| Decodes a [`Task`](#Task) from protobuf binary.
 -}
-decodeTaskBytes : Proto.Binary.Decoder Task
-decodeTaskBytes =
-    mergeTaskBytes defaultTask
+decodeTaskBinary : Proto.Binary.Decoder Task
+decodeTaskBinary =
+    mergeTaskBinary defaultTask
 
 
 {-| Decodes a [`GetTaskRequest`](#GetTaskRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeGetTaskRequestBytes : GetTaskRequest -> Proto.Binary.Decoder GetTaskRequest
-mergeGetTaskRequestBytes =
+mergeGetTaskRequestBinary : GetTaskRequest -> Proto.Binary.Decoder GetTaskRequest
+mergeGetTaskRequestBinary =
     Proto.Binary.merge
         "tasks.v1.GetTaskRequest"
         (\number wire value ->
@@ -586,6 +586,6 @@ mergeGetTaskRequestBytes =
 
 {-| Decodes a [`GetTaskRequest`](#GetTaskRequest) from protobuf binary.
 -}
-decodeGetTaskRequestBytes : Proto.Binary.Decoder GetTaskRequest
-decodeGetTaskRequestBytes =
-    mergeGetTaskRequestBytes defaultGetTaskRequest
+decodeGetTaskRequestBinary : Proto.Binary.Decoder GetTaskRequest
+decodeGetTaskRequestBinary =
+    mergeGetTaskRequestBinary defaultGetTaskRequest

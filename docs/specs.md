@@ -12,7 +12,7 @@ beside each link says what the runtime or the generator does about it.
   request and response over HTTP, `Connect-Protocol-Version`, the JSON
   error shape and its codes, the mapping from an HTTP status to a code,
   and GET for methods without side effects. `Rpc.Protocol.connect`,
-  `connectProto` and `withConnectGet` ([calling.md](calling.md)).
+  `connectBinary` and `withConnectGet` ([calling.md](calling.md)).
 - [Connect conformance suite](https://github.com/connectrpc/conformance):
   the official test runner; the live suite runs the runtime under it
   with the features
@@ -32,7 +32,7 @@ beside each link says what the runtime or the generator does about it.
   protobuf's test runner for parsers and serializers. `just
   protobuf-conformance` runs it, opt-in and outside the gate, against the
   runtime's protobuf binary and proto3 JSON codecs through the Elm
-  generated for its `test_messages_proto3.proto` under `wire=both`:
+  generated for its `test_messages_proto3.proto` under `codec=both`:
   binary and JSON in, binary and JSON out, with JSPB, text, proto2 and
   editions answered skipped. The cases
   that fail are listed and classified in

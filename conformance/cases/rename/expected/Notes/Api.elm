@@ -147,21 +147,21 @@ enumAudience =
 -}
 messageMemo : Proto.Message.Message Memo
 messageMemo =
-    Proto.Message.init "notes.v1.Note" encodeMemo decodeMemo encodeMemoBytes decodeMemoBytes
+    Proto.Message.init "notes.v1.Note" encodeMemo decodeMemo encodeMemoBinary decodeMemoBinary
 
 
 {-| The typed value of [`Edit`](#Edit): its full name and codecs.
 -}
 messageEdit : Proto.Message.Message Edit
 messageEdit =
-    Proto.Message.init "notes.v1.Note.Revision" encodeEdit decodeEdit encodeEditBytes decodeEditBytes
+    Proto.Message.init "notes.v1.Note.Revision" encodeEdit decodeEdit encodeEditBinary decodeEditBinary
 
 
 {-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its full name and codecs.
 -}
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
-    Proto.Message.init "notes.v1.GetNoteRequest" encodeGetNoteRequest decodeGetNoteRequest encodeGetNoteRequestBytes decodeGetNoteRequestBytes
+    Proto.Message.init "notes.v1.GetNoteRequest" encodeGetNoteRequest decodeGetNoteRequest encodeGetNoteRequestBinary decodeGetNoteRequestBinary
 
 
 
@@ -329,8 +329,8 @@ decodeGetNoteRequest =
 
 {-| The number protobuf binary writes an [`Audience`](#Audience) as.
 -}
-encodeAudienceBytes : Audience -> Int
-encodeAudienceBytes value =
+encodeAudienceBinary : Audience -> Int
+encodeAudienceBinary value =
     case value of
         AudienceUnspecified ->
             0
@@ -341,20 +341,20 @@ encodeAudienceBytes value =
 
 {-| Encodes a [`Memo`](#Memo) as protobuf binary.
 -}
-encodeMemoBytes : Memo -> Bytes.Encode.Encoder
-encodeMemoBytes value =
+encodeMemoBinary : Memo -> Bytes.Encode.Encoder
+encodeMemoBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.heading
-        , Proto.Binary.implicit (Proto.Binary.enum encodeAudienceBytes decodeAudienceBytes) 2 value.visibility
-        , Proto.Binary.list (Proto.Binary.embedded encodeEditBytes mergeEditBytes defaultEdit) 3 value.revisions
-        , encodeMemoBodyBytes value.body
+        , Proto.Binary.implicit (Proto.Binary.enum encodeAudienceBinary decodeAudienceBinary) 2 value.visibility
+        , Proto.Binary.list (Proto.Binary.embedded encodeEditBinary mergeEditBinary defaultEdit) 3 value.revisions
+        , encodeMemoBodyBinary value.body
         ]
 
 
 {-| Encodes a [`MemoBody`](#MemoBody) as protobuf binary: its set member's field.
 -}
-encodeMemoBodyBytes : MemoBody -> Bytes.Encode.Encoder
-encodeMemoBodyBytes value =
+encodeMemoBodyBinary : MemoBody -> Bytes.Encode.Encoder
+encodeMemoBodyBinary value =
     case value of
         MemoBodyUnset ->
             Bytes.Encode.sequence []
@@ -368,8 +368,8 @@ encodeMemoBodyBytes value =
 
 {-| Encodes an [`Edit`](#Edit) as protobuf binary.
 -}
-encodeEditBytes : Edit -> Bytes.Encode.Encoder
-encodeEditBytes value =
+encodeEditBinary : Edit -> Bytes.Encode.Encoder
+encodeEditBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.int32 1 value.number
         ]
@@ -377,8 +377,8 @@ encodeEditBytes value =
 
 {-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as protobuf binary.
 -}
-encodeGetNoteRequestBytes : GetNoteRequest -> Bytes.Encode.Encoder
-encodeGetNoteRequestBytes value =
+encodeGetNoteRequestBinary : GetNoteRequest -> Bytes.Encode.Encoder
+encodeGetNoteRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
@@ -390,8 +390,8 @@ encodeGetNoteRequestBytes value =
 
 {-| An [`Audience`](#Audience) from the number protobuf binary carries.
 -}
-decodeAudienceBytes : Int -> Audience
-decodeAudienceBytes number =
+decodeAudienceBinary : Int -> Audience
+decodeAudienceBinary number =
     case number of
         1 ->
             Everyone
@@ -402,8 +402,8 @@ decodeAudienceBytes number =
 
 {-| Decodes a [`Memo`](#Memo) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeMemoBytes : Memo -> Proto.Binary.Decoder Memo
-mergeMemoBytes =
+mergeMemoBinary : Memo -> Proto.Binary.Decoder Memo
+mergeMemoBinary =
     Proto.Binary.merge
         "notes.v1.Note"
         (\number wire value ->
@@ -423,7 +423,7 @@ mergeMemoBytes =
 
                 2 ->
                     Proto.Binary.field
-                        (Proto.Binary.enum encodeAudienceBytes decodeAudienceBytes)
+                        (Proto.Binary.enum encodeAudienceBinary decodeAudienceBinary)
                         (\v ->
                             { heading = value.heading
                             , visibility = v
@@ -436,7 +436,7 @@ mergeMemoBytes =
 
                 3 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeEditBytes mergeEditBytes defaultEdit)
+                        (Proto.Binary.embedded encodeEditBinary mergeEditBinary defaultEdit)
                         (\v ->
                             { heading = value.heading
                             , visibility = value.visibility
@@ -488,15 +488,15 @@ mergeMemoBytes =
 
 {-| Decodes a [`Memo`](#Memo) from protobuf binary.
 -}
-decodeMemoBytes : Proto.Binary.Decoder Memo
-decodeMemoBytes =
-    mergeMemoBytes defaultMemo
+decodeMemoBinary : Proto.Binary.Decoder Memo
+decodeMemoBinary =
+    mergeMemoBinary defaultMemo
 
 
 {-| Decodes an [`Edit`](#Edit) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeEditBytes : Edit -> Proto.Binary.Decoder Edit
-mergeEditBytes =
+mergeEditBinary : Edit -> Proto.Binary.Decoder Edit
+mergeEditBinary =
     Proto.Binary.merge
         "notes.v1.Note.Revision"
         (\number wire value ->
@@ -519,15 +519,15 @@ mergeEditBytes =
 
 {-| Decodes an [`Edit`](#Edit) from protobuf binary.
 -}
-decodeEditBytes : Proto.Binary.Decoder Edit
-decodeEditBytes =
-    mergeEditBytes defaultEdit
+decodeEditBinary : Proto.Binary.Decoder Edit
+decodeEditBinary =
+    mergeEditBinary defaultEdit
 
 
 {-| Decodes a [`GetNoteRequest`](#GetNoteRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeGetNoteRequestBytes : GetNoteRequest -> Proto.Binary.Decoder GetNoteRequest
-mergeGetNoteRequestBytes =
+mergeGetNoteRequestBinary : GetNoteRequest -> Proto.Binary.Decoder GetNoteRequest
+mergeGetNoteRequestBinary =
     Proto.Binary.merge
         "notes.v1.GetNoteRequest"
         (\number wire value ->
@@ -550,6 +550,6 @@ mergeGetNoteRequestBytes =
 
 {-| Decodes a [`GetNoteRequest`](#GetNoteRequest) from protobuf binary.
 -}
-decodeGetNoteRequestBytes : Proto.Binary.Decoder GetNoteRequest
-decodeGetNoteRequestBytes =
-    mergeGetNoteRequestBytes defaultGetNoteRequest
+decodeGetNoteRequestBinary : Proto.Binary.Decoder GetNoteRequest
+decodeGetNoteRequestBinary =
+    mergeGetNoteRequestBinary defaultGetNoteRequest

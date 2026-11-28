@@ -244,56 +244,56 @@ defaultStampRequest =
 -}
 messageBlob : Proto.Message.Message Blob
 messageBlob =
-    Proto.Message.init "blobs.v1.Blob" encodeBlob decodeBlob encodeBlobBytes decodeBlobBytes
+    Proto.Message.init "blobs.v1.Blob" encodeBlob decodeBlob encodeBlobBinary decodeBlobBinary
 
 
 {-| The typed value of [`Labeled`](#Labeled): its full name and codecs.
 -}
 messageLabeled : Proto.Message.Message Labeled
 messageLabeled =
-    Proto.Message.initWith "blobs.v1.Labeled" encodeLabeled decodeLabeledWith encodeLabeledBytes decodeLabeledBytes
+    Proto.Message.initWith "blobs.v1.Labeled" encodeLabeled decodeLabeledWith encodeLabeledBinary decodeLabeledBinary
 
 
 {-| The typed value of [`LabelBlobRequest`](#LabelBlobRequest): its full name and codecs.
 -}
 messageLabelBlobRequest : Proto.Message.Message LabelBlobRequest
 messageLabelBlobRequest =
-    Proto.Message.initWith "blobs.v1.LabelBlobRequest" encodeLabelBlobRequest decodeLabelBlobRequestWith encodeLabelBlobRequestBytes decodeLabelBlobRequestBytes
+    Proto.Message.initWith "blobs.v1.LabelBlobRequest" encodeLabelBlobRequest decodeLabelBlobRequestWith encodeLabelBlobRequestBinary decodeLabelBlobRequestBinary
 
 
 {-| The typed value of [`Folder`](#Folder): its full name and codecs.
 -}
 messageFolder : Proto.Message.Message Folder
 messageFolder =
-    Proto.Message.init "blobs.v1.Folder" encodeFolder decodeFolder encodeFolderBytes decodeFolderBytes
+    Proto.Message.init "blobs.v1.Folder" encodeFolder decodeFolder encodeFolderBinary decodeFolderBinary
 
 
 {-| The typed value of [`Slots`](#Slots): its full name and codecs.
 -}
 messageSlots : Proto.Message.Message Slots
 messageSlots =
-    Proto.Message.init "blobs.v1.Slots" encodeSlots decodeSlots encodeSlotsBytes decodeSlotsBytes
+    Proto.Message.init "blobs.v1.Slots" encodeSlots decodeSlots encodeSlotsBinary decodeSlotsBinary
 
 
 {-| The typed value of [`Free`](#Free): its full name and codecs.
 -}
 messageFree : Proto.Message.Message Free
 messageFree =
-    Proto.Message.init "blobs.v1.Free" encodeFree decodeFree encodeFreeBytes decodeFreeBytes
+    Proto.Message.init "blobs.v1.Free" encodeFree decodeFree encodeFreeBinary decodeFreeBinary
 
 
 {-| The typed value of [`Moment`](#Moment): its full name and codecs.
 -}
 messageMoment : Proto.Message.Message Moment
 messageMoment =
-    Proto.Message.init "blobs.v1.Moment" encodeMoment decodeMoment encodeMomentBytes decodeMomentBytes
+    Proto.Message.init "blobs.v1.Moment" encodeMoment decodeMoment encodeMomentBinary decodeMomentBinary
 
 
 {-| The typed value of [`StampRequest`](#StampRequest): its full name and codecs.
 -}
 messageStampRequest : Proto.Message.Message StampRequest
 messageStampRequest =
-    Proto.Message.init "blobs.v1.StampRequest" encodeStampRequest decodeStampRequest encodeStampRequestBytes decodeStampRequestBytes
+    Proto.Message.init "blobs.v1.StampRequest" encodeStampRequest decodeStampRequest encodeStampRequestBinary decodeStampRequestBinary
 
 
 
@@ -590,8 +590,8 @@ decodeStampRequest =
 
 {-| Encodes a [`Blob`](#Blob) as protobuf binary.
 -}
-encodeBlobBytes : Blob -> Bytes.Encode.Encoder
-encodeBlobBytes value =
+encodeBlobBinary : Blob -> Bytes.Encode.Encoder
+encodeBlobBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.bytesAsBytes 1 value.digest
         , Proto.Binary.implicit Proto.Binary.string 2 value.name
@@ -601,8 +601,8 @@ encodeBlobBytes value =
 
 {-| Encodes a [`Labeled`](#Labeled) as protobuf binary.
 -}
-encodeLabeledBytes : Labeled -> Bytes.Encode.Encoder
-encodeLabeledBytes value =
+encodeLabeledBinary : Labeled -> Bytes.Encode.Encoder
+encodeLabeledBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.optional Proto.Binary.any 2 value.label
@@ -611,35 +611,35 @@ encodeLabeledBytes value =
 
 {-| Encodes a [`LabelBlobRequest`](#LabelBlobRequest) as protobuf binary.
 -}
-encodeLabelBlobRequestBytes : LabelBlobRequest -> Bytes.Encode.Encoder
-encodeLabelBlobRequestBytes value =
+encodeLabelBlobRequestBinary : LabelBlobRequest -> Bytes.Encode.Encoder
+encodeLabelBlobRequestBinary value =
     Bytes.Encode.sequence
-        [ Proto.Binary.optional (Proto.Binary.embedded encodeLabeledBytes mergeLabeledBytes defaultLabeled) 1 value.labeled
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeLabeledBinary mergeLabeledBinary defaultLabeled) 1 value.labeled
         , Proto.Binary.implicit Proto.Binary.string 2 value.shelf
         ]
 
 
 {-| Encodes a [`Folder`](#Folder) as protobuf binary.
 -}
-encodeFolderBytes : Folder -> Bytes.Encode.Encoder
-encodeFolderBytes value =
+encodeFolderBinary : Folder -> Bytes.Encode.Encoder
+encodeFolderBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
-        , Proto.Binary.optional (Proto.Binary.embedded encodeFolder_Bytes mergeFolder_Bytes (Folder_ defaultFolder)) 2 value.parent
+        , Proto.Binary.optional (Proto.Binary.embedded encodeFolder_Binary mergeFolder_Binary (Folder_ defaultFolder)) 2 value.parent
         ]
 
 
 {-| Encodes a [`Folder_`](#Folder_) as protobuf binary.
 -}
-encodeFolder_Bytes : Folder_ -> Bytes.Encode.Encoder
-encodeFolder_Bytes (Folder_ value) =
-    encodeFolderBytes value
+encodeFolder_Binary : Folder_ -> Bytes.Encode.Encoder
+encodeFolder_Binary (Folder_ value) =
+    encodeFolderBinary value
 
 
 {-| Encodes a [`Slots`](#Slots) as protobuf binary.
 -}
-encodeSlotsBytes : Slots -> Bytes.Encode.Encoder
-encodeSlotsBytes value =
+encodeSlotsBinary : Slots -> Bytes.Encode.Encoder
+encodeSlotsBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.present Proto.Binary.empty 2 value.nothing
@@ -648,8 +648,8 @@ encodeSlotsBytes value =
 
 {-| Encodes a [`Free`](#Free) as protobuf binary.
 -}
-encodeFreeBytes : Free -> Bytes.Encode.Encoder
-encodeFreeBytes value =
+encodeFreeBinary : Free -> Bytes.Encode.Encoder
+encodeFreeBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.optional Proto.Binary.value 2 value.value
@@ -658,8 +658,8 @@ encodeFreeBytes value =
 
 {-| Encodes a [`Moment`](#Moment) as protobuf binary.
 -}
-encodeMomentBytes : Moment -> Bytes.Encode.Encoder
-encodeMomentBytes value =
+encodeMomentBinary : Moment -> Bytes.Encode.Encoder
+encodeMomentBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.optional Proto.Binary.timestamp 2 value.at
@@ -668,11 +668,11 @@ encodeMomentBytes value =
 
 {-| Encodes a [`StampRequest`](#StampRequest) as protobuf binary.
 -}
-encodeStampRequestBytes : StampRequest -> Bytes.Encode.Encoder
-encodeStampRequestBytes value =
+encodeStampRequestBinary : StampRequest -> Bytes.Encode.Encoder
+encodeStampRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.shelf
-        , Proto.Binary.optional (Proto.Binary.embedded encodeMomentBytes mergeMomentBytes defaultMoment) 2 value.moment
+        , Proto.Binary.optional (Proto.Binary.embedded encodeMomentBinary mergeMomentBinary defaultMoment) 2 value.moment
         ]
 
 
@@ -682,8 +682,8 @@ encodeStampRequestBytes value =
 
 {-| Decodes a [`Blob`](#Blob) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeBlobBytes : Blob -> Proto.Binary.Decoder Blob
-mergeBlobBytes =
+mergeBlobBinary : Blob -> Proto.Binary.Decoder Blob
+mergeBlobBinary =
     Proto.Binary.merge
         "blobs.v1.Blob"
         (\number wire value ->
@@ -732,22 +732,22 @@ mergeBlobBytes =
 
 {-| Decodes a [`Blob`](#Blob) from protobuf binary.
 -}
-decodeBlobBytes : Proto.Binary.Decoder Blob
-decodeBlobBytes =
-    mergeBlobBytes defaultBlob
+decodeBlobBinary : Proto.Binary.Decoder Blob
+decodeBlobBinary =
+    mergeBlobBinary defaultBlob
 
 
 {-| Decodes a [`Labeled`](#Labeled) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeLabeledBytes : Labeled -> Proto.Binary.Decoder Labeled
-mergeLabeledBytes =
-    mergeNestedLabeledBytes 1
+mergeLabeledBinary : Labeled -> Proto.Binary.Decoder Labeled
+mergeLabeledBinary =
+    mergeNestedLabeledBinary 1
 
 
-{-| [`mergeLabeledBytes`](#mergeLabeledBytes) for a [`Labeled`](#Labeled) held `depth` levels deep.
+{-| [`mergeLabeledBinary`](#mergeLabeledBinary) for a [`Labeled`](#Labeled) held `depth` levels deep.
 -}
-mergeNestedLabeledBytes : Int -> Labeled -> Proto.Binary.Decoder Labeled
-mergeNestedLabeledBytes depth =
+mergeNestedLabeledBinary : Int -> Labeled -> Proto.Binary.Decoder Labeled
+mergeNestedLabeledBinary depth =
     Proto.Binary.merge
         "blobs.v1.Labeled"
         (\number wire value ->
@@ -782,29 +782,29 @@ mergeNestedLabeledBytes depth =
 
 {-| Decodes a [`Labeled`](#Labeled) from protobuf binary.
 -}
-decodeLabeledBytes : Proto.Binary.Decoder Labeled
-decodeLabeledBytes =
-    mergeLabeledBytes defaultLabeled
+decodeLabeledBinary : Proto.Binary.Decoder Labeled
+decodeLabeledBinary =
+    mergeLabeledBinary defaultLabeled
 
 
 {-| Decodes a [`LabelBlobRequest`](#LabelBlobRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeLabelBlobRequestBytes : LabelBlobRequest -> Proto.Binary.Decoder LabelBlobRequest
-mergeLabelBlobRequestBytes =
-    mergeNestedLabelBlobRequestBytes 1
+mergeLabelBlobRequestBinary : LabelBlobRequest -> Proto.Binary.Decoder LabelBlobRequest
+mergeLabelBlobRequestBinary =
+    mergeNestedLabelBlobRequestBinary 1
 
 
-{-| [`mergeLabelBlobRequestBytes`](#mergeLabelBlobRequestBytes) for a [`LabelBlobRequest`](#LabelBlobRequest) held `depth` levels deep.
+{-| [`mergeLabelBlobRequestBinary`](#mergeLabelBlobRequestBinary) for a [`LabelBlobRequest`](#LabelBlobRequest) held `depth` levels deep.
 -}
-mergeNestedLabelBlobRequestBytes : Int -> LabelBlobRequest -> Proto.Binary.Decoder LabelBlobRequest
-mergeNestedLabelBlobRequestBytes depth =
+mergeNestedLabelBlobRequestBinary : Int -> LabelBlobRequest -> Proto.Binary.Decoder LabelBlobRequest
+mergeNestedLabelBlobRequestBinary depth =
     Proto.Binary.merge
         "blobs.v1.LabelBlobRequest"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.recursive depth encodeLabeledBytes mergeNestedLabeledBytes defaultLabeled)
+                        (Proto.Binary.recursive depth encodeLabeledBinary mergeNestedLabeledBinary defaultLabeled)
                         value.labeled
                         (\v ->
                             { labeled = Just v
@@ -833,22 +833,22 @@ mergeNestedLabelBlobRequestBytes depth =
 
 {-| Decodes a [`LabelBlobRequest`](#LabelBlobRequest) from protobuf binary.
 -}
-decodeLabelBlobRequestBytes : Proto.Binary.Decoder LabelBlobRequest
-decodeLabelBlobRequestBytes =
-    mergeLabelBlobRequestBytes defaultLabelBlobRequest
+decodeLabelBlobRequestBinary : Proto.Binary.Decoder LabelBlobRequest
+decodeLabelBlobRequestBinary =
+    mergeLabelBlobRequestBinary defaultLabelBlobRequest
 
 
 {-| Decodes a [`Folder`](#Folder) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeFolderBytes : Folder -> Proto.Binary.Decoder Folder
-mergeFolderBytes =
-    mergeNestedFolderBytes 1
+mergeFolderBinary : Folder -> Proto.Binary.Decoder Folder
+mergeFolderBinary =
+    mergeNestedFolderBinary 1
 
 
-{-| [`mergeFolderBytes`](#mergeFolderBytes) for a [`Folder`](#Folder) held `depth` levels deep.
+{-| [`mergeFolderBinary`](#mergeFolderBinary) for a [`Folder`](#Folder) held `depth` levels deep.
 -}
-mergeNestedFolderBytes : Int -> Folder -> Proto.Binary.Decoder Folder
-mergeNestedFolderBytes =
+mergeNestedFolderBinary : Int -> Folder -> Proto.Binary.Decoder Folder
+mergeNestedFolderBinary =
     Proto.Binary.memo
         (\depth ->
             Proto.Binary.merge
@@ -868,7 +868,7 @@ mergeNestedFolderBytes =
 
                         2 ->
                             Proto.Binary.fieldInto
-                                (Proto.Binary.recursive depth encodeFolder_Bytes mergeNestedFolder_Bytes (Folder_ defaultFolder))
+                                (Proto.Binary.recursive depth encodeFolder_Binary mergeNestedFolder_Binary (Folder_ defaultFolder))
                                 value.parent
                                 (\v ->
                                     { name = value.name
@@ -887,29 +887,29 @@ mergeNestedFolderBytes =
 
 {-| Decodes a [`Folder`](#Folder) from protobuf binary.
 -}
-decodeFolderBytes : Proto.Binary.Decoder Folder
-decodeFolderBytes =
-    mergeFolderBytes defaultFolder
+decodeFolderBinary : Proto.Binary.Decoder Folder
+decodeFolderBinary =
+    mergeFolderBinary defaultFolder
 
 
 {-| Decodes a [`Folder_`](#Folder_) from protobuf binary into the one given.
 -}
-mergeFolder_Bytes : Folder_ -> Proto.Binary.Decoder Folder_
-mergeFolder_Bytes (Folder_ value) =
-    Proto.Binary.map Folder_ (mergeFolderBytes value)
+mergeFolder_Binary : Folder_ -> Proto.Binary.Decoder Folder_
+mergeFolder_Binary (Folder_ value) =
+    Proto.Binary.map Folder_ (mergeFolderBinary value)
 
 
-{-| [`mergeFolder_Bytes`](#mergeFolder_Bytes) for a [`Folder_`](#Folder_) held `depth` levels deep.
+{-| [`mergeFolder_Binary`](#mergeFolder_Binary) for a [`Folder_`](#Folder_) held `depth` levels deep.
 -}
-mergeNestedFolder_Bytes : Int -> Folder_ -> Proto.Binary.Decoder Folder_
-mergeNestedFolder_Bytes depth (Folder_ value) =
-    Proto.Binary.map Folder_ (mergeNestedFolderBytes depth value)
+mergeNestedFolder_Binary : Int -> Folder_ -> Proto.Binary.Decoder Folder_
+mergeNestedFolder_Binary depth (Folder_ value) =
+    Proto.Binary.map Folder_ (mergeNestedFolderBinary depth value)
 
 
 {-| Decodes a [`Slots`](#Slots) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeSlotsBytes : Slots -> Proto.Binary.Decoder Slots
-mergeSlotsBytes =
+mergeSlotsBinary : Slots -> Proto.Binary.Decoder Slots
+mergeSlotsBinary =
     Proto.Binary.merge
         "blobs.v1.Slots"
         (\number wire value ->
@@ -944,22 +944,22 @@ mergeSlotsBytes =
 
 {-| Decodes a [`Slots`](#Slots) from protobuf binary.
 -}
-decodeSlotsBytes : Proto.Binary.Decoder Slots
-decodeSlotsBytes =
-    mergeSlotsBytes defaultSlots
+decodeSlotsBinary : Proto.Binary.Decoder Slots
+decodeSlotsBinary =
+    mergeSlotsBinary defaultSlots
 
 
 {-| Decodes a [`Free`](#Free) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeFreeBytes : Free -> Proto.Binary.Decoder Free
-mergeFreeBytes =
-    mergeNestedFreeBytes 1
+mergeFreeBinary : Free -> Proto.Binary.Decoder Free
+mergeFreeBinary =
+    mergeNestedFreeBinary 1
 
 
-{-| [`mergeFreeBytes`](#mergeFreeBytes) for a [`Free`](#Free) held `depth` levels deep.
+{-| [`mergeFreeBinary`](#mergeFreeBinary) for a [`Free`](#Free) held `depth` levels deep.
 -}
-mergeNestedFreeBytes : Int -> Free -> Proto.Binary.Decoder Free
-mergeNestedFreeBytes depth =
+mergeNestedFreeBinary : Int -> Free -> Proto.Binary.Decoder Free
+mergeNestedFreeBinary depth =
     Proto.Binary.merge
         "blobs.v1.Free"
         (\number wire value ->
@@ -994,15 +994,15 @@ mergeNestedFreeBytes depth =
 
 {-| Decodes a [`Free`](#Free) from protobuf binary.
 -}
-decodeFreeBytes : Proto.Binary.Decoder Free
-decodeFreeBytes =
-    mergeFreeBytes defaultFree
+decodeFreeBinary : Proto.Binary.Decoder Free
+decodeFreeBinary =
+    mergeFreeBinary defaultFree
 
 
 {-| Decodes a [`Moment`](#Moment) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeMomentBytes : Moment -> Proto.Binary.Decoder Moment
-mergeMomentBytes =
+mergeMomentBinary : Moment -> Proto.Binary.Decoder Moment
+mergeMomentBinary =
     Proto.Binary.merge
         "blobs.v1.Moment"
         (\number wire value ->
@@ -1037,15 +1037,15 @@ mergeMomentBytes =
 
 {-| Decodes a [`Moment`](#Moment) from protobuf binary.
 -}
-decodeMomentBytes : Proto.Binary.Decoder Moment
-decodeMomentBytes =
-    mergeMomentBytes defaultMoment
+decodeMomentBinary : Proto.Binary.Decoder Moment
+decodeMomentBinary =
+    mergeMomentBinary defaultMoment
 
 
 {-| Decodes a [`StampRequest`](#StampRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeStampRequestBytes : StampRequest -> Proto.Binary.Decoder StampRequest
-mergeStampRequestBytes =
+mergeStampRequestBinary : StampRequest -> Proto.Binary.Decoder StampRequest
+mergeStampRequestBinary =
     Proto.Binary.merge
         "blobs.v1.StampRequest"
         (\number wire value ->
@@ -1063,7 +1063,7 @@ mergeStampRequestBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeMomentBytes mergeMomentBytes defaultMoment)
+                        (Proto.Binary.embedded encodeMomentBinary mergeMomentBinary defaultMoment)
                         value.moment
                         (\v ->
                             { shelf = value.shelf
@@ -1081,9 +1081,9 @@ mergeStampRequestBytes =
 
 {-| Decodes a [`StampRequest`](#StampRequest) from protobuf binary.
 -}
-decodeStampRequestBytes : Proto.Binary.Decoder StampRequest
-decodeStampRequestBytes =
-    mergeStampRequestBytes defaultStampRequest
+decodeStampRequestBinary : Proto.Binary.Decoder StampRequest
+decodeStampRequestBinary =
+    mergeStampRequestBinary defaultStampRequest
 
 
 

@@ -18,22 +18,22 @@
   `Rpc.Protocol.connect |> Rpc.Protocol.withConnectGet` (which leaves
   any other protocol unchanged), and `Rpc.Transport.connect |>
   Rpc.Transport.withCodec Rpc.Transport.Proto` is
-  `Rpc.Protocol.connectProto`. `withMaxGetUrl`, `withReadMaxBytes`,
+  `Rpc.Protocol.connectBinary`. `withMaxGetUrl`, `withReadMaxBytes`,
   `withWriteMaxBytes` and `name` keep their names on `Rpc.Protocol`,
   which adds `codec` (`"json"` or `"proto"`) and `toJson`.
   `Rpc.Transport.withCodec`, `Rpc.Transport.codec` and its `Json` and
   `Proto` constructors are gone.
 - A call, a client and a protocol carry their codec in their type:
-  `Rpc.Call Rpc.Json req res`, `Rpc.Client Rpc.Proto`. Code generated
-  under the default `wire=both` gives calls free in the codec, which a
-  client of either sends; `wire=json` gives `Rpc.Call Rpc.Json` calls
-  and `wire=proto` `Rpc.Call Rpc.Proto`. Annotations that named
+  `Rpc.Call Rpc.Json req res`, `Rpc.Client Rpc.Binary`. Code generated
+  under the default `codec=both` gives calls free in the codec, which a
+  client of either sends; `codec=json` gives `Rpc.Call Rpc.Json` calls
+  and `codec=binary` `Rpc.Call Rpc.Binary`. Annotations that named
   `Rpc.Call req res` gain the parameter. A client sending a call
   generated without its codec is a compile error.
 - `Rpc.send`, `task`, `taskTraced`, `sendTraced`, `request` and
   `taskFromRequest` take an `Rpc.Client codec` in place of the config.
   `Rpc.response` takes an `Rpc.Client Rpc.Json` and a JSON call, and
-  `Rpc.responseBytes` an `Rpc.Client Rpc.Proto` and a binary one.
+  `Rpc.responseBytes` an `Rpc.Client Rpc.Binary` and a binary one.
 - `Rpc.Error.MissingCodec` is gone: the types now rule out the call it
   reported.
 - `Rpc.Trace.transport` is replaced by `Rpc.Trace.protocol` and
@@ -52,7 +52,7 @@
 - A generated method's documentation names its codecs (`Codecs: JSON
   and protobuf binary.`).
 - `Proto.Any.pack` of a message with protobuf binary codecs alone
-  (`wire=proto`) holds its binary alone; it held a `null` JSON beside
+  (`codec=binary`) holds its binary alone; it held a `null` JSON beside
   it before.
 - `Rpc.Retry.on` puts the policy's math on the policy, and the
   protocol modifiers install the code they need, so a program that

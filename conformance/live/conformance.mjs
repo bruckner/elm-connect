@@ -9,9 +9,9 @@
 //   connectconformance --mode client --conf conformance.yaml \
 //     --known-failing @known-failing.txt -- node conformance.mjs [--send MODE] [--elm PATH]
 //
-// A request for the proto codec is sent with the envelope's `codec: "proto"`,
+// A request for Connect's `proto` codec is sent with the envelope's `codec: "proto"`,
 // and one over gRPC-Web with `protocol: "grpcweb"` as well; the runner's
-// bindings, generated with the default `wire=both`, carry binary codecs.
+// bindings, generated with the default `codec=both`, carry binary codecs.
 // MODE is how the runner sends each call (an envelope's `send`): `halves`,
 // the default, through the runtime's pure halves (Rpc.request, elm/http,
 // Rpc.response), which give an application the answer's status and headers;
@@ -120,7 +120,7 @@ async function answer(runner, send, request) {
   if (result.ok !== undefined) {
     let decoded;
     try {
-      // Under the proto codec the runtime's response is read back from the
+      // Under Connect's `proto` codec the runtime's response is read back from the
       // binary it re-encodes, which holds an Any's packed bytes as they came.
       decoded =
         config.codec === "proto" && result.okBinary !== undefined

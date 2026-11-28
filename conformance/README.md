@@ -262,8 +262,8 @@ where prost-reflect's is not: fields in number order, a map's entries in
 the order of the Elm `Dict` holding them, every singular `Empty` set, every
 `Any`'s packed message re-encoded the same way and a kind-less `Value` given
 `null_value`; another test checks that prost-reflect reads each back as
-the sample. It generates the protos under `wire=both` (with `int64=int`,
-with `bytes=bytes` and with `unknown_fields=keep`) and `wire=proto` too, and
+the sample. It generates the protos under `codec=both` (with `int64=int`,
+with `bytes=bytes` and with `unknown_fields=keep`) and `codec=binary` too, and
 `tests/Codec/BinaryRoundTripTest.elm` decodes each sample's binary with the
 generated decoder and re-encodes it to the same bytes, with unknown fields
 of every wire type appended and without (under `unknown_fields=keep`,
@@ -339,8 +339,9 @@ binary or its decoders disagree.
 application whose one method speaks JSON alone (`Proto.Method.initJson`)
 over a Connect protocol given every modifier, with `--optimize`, and fails
 if the output holds any definition of elm/bytes' kernel (`_Bytes_…`),
-listing them. A modifier installs both wires' functions, and the binary
-ones must reach elm/bytes only through the wire a binary constructor built
+listing them. A modifier installs both kinds' functions, text and bytes, and
+the bytes ones must reach elm/bytes only through the functions a binary
+constructor built
 (design §5.1), so a client that never speaks protobuf binary carries none
 of it.
 
@@ -397,9 +398,9 @@ live/
                       front of the example server (docs/envoy.md)
   envoy/envoy-version the Envoy release func-e runs
   cases/envoy.json    Envoy's errors in grpc-status headers, and its own answers
-  cases/proto.json    every method over Connect's proto codec
+  cases/proto.json    every method over Connect's `proto` codec
   conformance-proto.yaml
-                      the suite's features with the proto codec
+                      the suite's features with Connect's `proto` codec
   known-failing-proto.txt
                       the suite's test cases the runtime fails under it
   cases/grpcweb.json  every method over gRPC-Web
@@ -472,7 +473,7 @@ own, `Rpc.Call.withHeaders`, sent after the client's), `send` (`sendTraced`, the
 default, `send`, `task`, `halves` or `taskFromRequest`), `rewrite`, `tracker` (`Rpc.Call.withTracker`) and
 `cancelAfterMs`. `config` builds the client: `protocol` and `codec`
 (`json`, the default, or `proto`) pick its `Rpc.Protocol`,
-`Rpc.Protocol.connect`, `connectProto`, `transcode` or `grpcWeb`
+`Rpc.Protocol.connect`, `connectBinary`, `transcode` or `grpcWeb`
 (`transcode` with `proto` is refused, since transcoding is JSON, and
 `grpcweb` with anything but `proto`, since gRPC-Web is binary); `useGet` and
 `maxGetUrl` apply `Rpc.Protocol.withConnectGet` and `withMaxGetUrl` over
@@ -662,19 +663,19 @@ case to fail, so the lists cannot go stale. One test case pattern per line
 `connectconformance` reads only the first `--known-failing` flag it is
 given, so the `sendTraced` run joins the two files in `build/`.
 
-### The proto codec, live
+### The binary codec, live
 
-`just live-proto` (part of `just live`) runs the proto codec's legs on
+`just live-proto` (part of `just live`) runs Connect's `proto` codec's legs on
 the same runner as the JSON legs. Its bindings, the example's and the
-suite's, are generated with the default `wire=both`, so each call is free
+suite's, are generated with the default `codec=both`, so each call is free
 in its codec, and `src/Live/Codec.elm` takes each generated call function
-at both codecs, so an envelope's `codec` picks a JSON or a proto client.
+at both codecs, so an envelope's `codec` picks a JSON or a binary client.
 It runs `cases/proto.json` against the example server, and the Connect
 conformance suite with
 `conformance-proto.yaml`, through the halves and with `sendTraced`, the
 envelope's `codec: "proto"` set from the suite's request and the result
 read back from `okBinary` and `detailsBinary`. The suite runs its
-error-body cases only when the proto codec is listed, so the proto run
+error-body cases only when Connect's `proto` codec is listed, so the proto run
 has 56 test cases to the JSON run's 40; `known-failing-proto.txt` lists
 none, and the `sendTraced` run adds `known-failing-send.txt`: 56 of 56
 pass through the halves and 55 with `sendTraced`. Transcoding is JSON
@@ -816,7 +817,7 @@ caches `~/.local/share/func-e`, keyed on `envoy-version`.
 its `conformance_test_runner` sends the testee messages of
 `test_messages_proto3.proto` in one format and checks what it writes back,
 against protobuf's own parsers. The testee reads and writes them with the
-runtime and the Elm generated from that proto under `wire=both`, so the
+runtime and the Elm generated from that proto under `codec=both`, so the
 suite tests the protobuf binary and proto3 JSON codecs with an oracle
 independent of prost-reflect, which the codec round trips use.
 

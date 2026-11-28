@@ -1,7 +1,7 @@
 module Live.Codec exposing (empty, entry, registry)
 
 {-| The dispatch tables' entries. The bindings are generated with the
-default `wire=both`, so a generated call is free in its codec: an entry has
+default `codec=both`, so a generated call is free in its codec: an entry has
 it as a JSON call and as a protobuf binary one, and sends an envelope in the
 codec it names.
 -}
@@ -26,9 +26,9 @@ import Rpc
 decoder and its response's typed value: the response is written as its
 protobuf binary, and as the proto3 JSON the registries convert that to.
 -}
-entry : (req -> Rpc.Call Rpc.Json req res) -> (req -> Rpc.Call Rpc.Proto req res) -> Decoder req -> Message res -> Entry msg
-entry toJsonCall toProtoCall decoder message =
-    Live.Call.entryWith { json = Just toJsonCall, proto = Just toProtoCall }
+entry : (req -> Rpc.Call Rpc.Json req res) -> (req -> Rpc.Call Rpc.Binary req res) -> Decoder req -> Message res -> Entry msg
+entry toJsonCall toBinaryCall decoder message =
+    Live.Call.entryWith { json = Just toJsonCall, binary = Just toBinaryCall }
         decoder
         { response =
             \response ->

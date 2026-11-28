@@ -1,13 +1,13 @@
-- Connect's proto codec: `Rpc.Protocol.connectProto` sends a call's
+- Connect's binary codec: `Rpc.Protocol.connectBinary` sends a call's
   request as protobuf binary, `application/proto` (a GET as
   `connect=v1&base64=1&encoding=proto&message=…`), and reads a
   successful answer as binary; error answers stay JSON. It sends the
-  calls of code generated under the default `wire=both` or under
-  `wire=proto`. `Rpc.Protocol.codec` gives `"proto"` for it.
+  calls of code generated under the default `codec=both` or under
+  `codec=binary`. `Rpc.Protocol.codec` gives `"proto"` for it.
   Transcoding stays JSON. A program whose methods have no binary codecs
   carries none of the binary path.
 - `Rpc.responseBytes` reads an answer elm/http read as bytes, for a
-  binary call sent through `Rpc.request` with an `Rpc.Client Rpc.Proto`;
+  binary call sent through `Rpc.request` with an `Rpc.Client Rpc.Binary`;
   `Rpc.response` keeps reading text.
 - A call of a method without binary codecs over a binary protocol, or
   of one with binary codecs alone over JSON, is a compile error where it
@@ -26,9 +26,9 @@
 - `Proto.Registry.withBinary` and `toBinary`: a registry can hold
   messages' codecs, which `Proto.Binary.anyWith` writes an `Any` holding
   JSON alone with, as its message's binary. Code generated with
-  `wire=both` gives each package a `binaryRegistry` of its messages and
+  `codec=both` gives each package a `binaryRegistry` of its messages and
   of the well-known types they hold, and writes `Any` fields with it, so
   an `Any` read from proto3 JSON is sent as binary. `Proto.Binary.any`,
   without a registry, writes an `Any` holding JSON alone with its type
   URL alone and converts nothing, so a program generated with
-  `wire=proto` carries no `Proto.Json`.
+  `codec=binary` carries no `Proto.Json`.

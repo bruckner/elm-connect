@@ -58,7 +58,7 @@ defaultPing =
 -}
 messagePing : Proto.Message.Message Ping
 messagePing =
-    Proto.Message.init "rpc.v1.Ping" encodePing decodePing encodePingBytes decodePingBytes
+    Proto.Message.init "rpc.v1.Ping" encodePing decodePing encodePingBinary decodePingBinary
 
 
 
@@ -114,8 +114,8 @@ decodePing =
 
 {-| Encodes a [`Ping`](#Ping) as protobuf binary.
 -}
-encodePingBytes : Ping -> Bytes.Encode.Encoder
-encodePingBytes _ =
+encodePingBinary : Ping -> Bytes.Encode.Encoder
+encodePingBinary _ =
     Bytes.Encode.sequence []
 
 
@@ -125,13 +125,13 @@ encodePingBytes _ =
 
 {-| Decodes a [`Ping`](#Ping) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergePingBytes : Ping -> Proto.Binary.Decoder Ping
-mergePingBytes =
+mergePingBinary : Ping -> Proto.Binary.Decoder Ping
+mergePingBinary =
     Proto.Binary.merge "rpc.v1.Ping" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes a [`Ping`](#Ping) from protobuf binary.
 -}
-decodePingBytes : Proto.Binary.Decoder Ping
-decodePingBytes =
-    mergePingBytes defaultPing
+decodePingBinary : Proto.Binary.Decoder Ping
+decodePingBinary =
+    mergePingBinary defaultPing

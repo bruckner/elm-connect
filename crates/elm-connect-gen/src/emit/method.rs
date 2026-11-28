@@ -18,7 +18,7 @@ use crate::elm::build::{
 };
 use crate::ir::{Idempotency, Method, TypeRef};
 use crate::naming::with_registry;
-use crate::options::Wire;
+use crate::options::Codec;
 use crate::route::{Body, FieldRef, PathSegment, QueryParam, Route, Segment};
 
 impl Emitter {
@@ -75,18 +75,18 @@ impl Emitter {
     /// Note`: `Rpc.call` of the method's `Proto.Method.Method`, built from
     /// its service's full name, its name and its codecs by
     /// `Proto.Method.initJson` (the request's JSON encoder, the response's
-    /// JSON decoder), `Proto.Method.initProto` (their binary codecs) or
+    /// JSON decoder), `Proto.Method.initBinary` (their binary codecs) or
     /// `Proto.Method.init` (the JSON codecs and the binary codecs) as the
-    /// `wire` option says, the JSON codecs taking the client's registry
+    /// `codec` option says, the JSON codecs taking the client's registry
     /// (ignored by a type that reaches no `Any`), then
     /// `withIdempotency` when the proto declares one, `withRoutes` with its
     /// route functions ([`Self::method_routes`]), or `withJsonRoutes` when
     /// they take the request's JSON too, and `withResponseBody` for each
-    /// binding whose rule names a response field. Under `wire=proto` it has no
+    /// binding whose rule names a response field. Under `codec=binary` it has no
     /// routes: its calls cannot be
     /// transcoded, which takes JSON. The call's codec is `Rpc.Json` under
-    /// `wire=json`, `Rpc.Proto` under `wire=proto`, and a type variable
-    /// under `wire=both`, so that any client sends it.
+    /// `codec=json`, `Rpc.Binary` under `codec=binary`, and a type variable
+    /// under `codec=both`, so that any client sends it.
     ///
     /// The value binds no locals and every library name in it is
     /// qualified, so it cannot clash with the package module's names or
@@ -98,18 +98,18 @@ impl Emitter {
         let request = self.method_type(&method.input);
         let response = self.method_type(&method.output);
         let mut codecs = vec![string(service), string(method.proto_name.clone())];
-        if self.wiring.json() {
+        if self.codec.json() {
             codecs.push(self.request_encoder_with(&method.input));
             codecs.push(self.response_decoder_with(&method.output));
         }
-        if self.wiring.binary() {
-            codecs.push(self.request_encoder_bytes(&method.input));
-            codecs.push(self.response_decoder_bytes(&method.output));
+        if self.codec.binary() {
+            codecs.push(self.request_encoder_binary(&method.input));
+            codecs.push(self.response_decoder_binary(&method.output));
         }
-        let (builder, tag) = match self.wiring {
-            Wire::Json => ("initJson", Some("Json")),
-            Wire::Proto => ("initProto", Some("Proto")),
-            Wire::Both => ("init", None),
+        let (builder, tag) = match self.codec {
+            Codec::Json => ("initJson", Some("Json")),
+            Codec::Binary => ("initBinary", Some("Binary")),
+            Codec::Both => ("init", None),
         };
         let built = stacked_apply(self.reference((PROTO_METHOD, builder)), codecs);
         let mut steps = Vec::new();
@@ -161,7 +161,7 @@ impl Emitter {
         };
         let call = self.library_type(RPC, "Call", [codec, request.clone(), response]);
         Decl::Value {
-            doc: Some(docs::method(service, method, self.wiring)),
+            doc: Some(docs::method(service, method, self.codec)),
             name: method.elm_name.clone(),
             annotation: ty_fn([request], call),
             params: Vec::new(),
@@ -173,7 +173,7 @@ impl Emitter {
     /// Proto.Route.Route`, one per binding of its HTTP rule
     /// ([`super::route_fn`]), and how its call takes its routes: as
     /// functions of the request, of the request and its JSON, or not at
-    /// all, for a method without a rule and under `wire=proto`.
+    /// all, for a method without a rule and under `codec=binary`.
     ///
     /// Every binding the route resolver accepts is typed. One that is not
     /// is a bug in the generator; the error holds the number of each such
@@ -185,7 +185,7 @@ impl Emitter {
         queries: &Queries,
         method: &Method,
     ) -> Result<(Vec<Decl>, Routes), Vec<usize>> {
-        if method.routes.is_empty() || self.wiring == Wire::Proto {
+        if method.routes.is_empty() || self.codec == Codec::Binary {
             return Ok((Vec::new(), Routes::None));
         }
         // A send over JSON writes and checks the request's JSON before
@@ -397,7 +397,7 @@ impl Emitter {
 
 /// How a method's call takes its routes for transcoding.
 pub(super) enum Routes {
-    /// None: a method without an HTTP rule, or under `wire=proto`.
+    /// None: a method without an HTTP rule, or under `codec=binary`.
     None,
     /// Its route functions, as many as its bindings.
     Functions(usize),

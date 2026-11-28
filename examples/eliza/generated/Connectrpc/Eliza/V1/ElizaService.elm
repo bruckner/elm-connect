@@ -48,8 +48,8 @@ say =
             "Say"
             Connectrpc.Eliza.V1.encodeSayRequest
             (\_ -> Connectrpc.Eliza.V1.decodeSayResponse)
-            Connectrpc.Eliza.V1.encodeSayRequestBytes
-            Connectrpc.Eliza.V1.decodeSayResponseBytes
+            Connectrpc.Eliza.V1.encodeSayRequestBinary
+            Connectrpc.Eliza.V1.decodeSayResponseBinary
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
         )
 

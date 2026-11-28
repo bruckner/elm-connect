@@ -42,7 +42,7 @@ descriptorNote =
 -}
 noteAs : String -> Message Note
 noteAs name =
-    Message.init name (Proto.Json.succeed << encodeNote) decodeNote encodeNoteBytes (noteBytesAs name)
+    Message.init name (Proto.Json.succeed << encodeNote) decodeNote encodeNoteBinary (noteBinaryAs name)
 
 
 encodeNote : Note -> Json.Encode.Value
@@ -60,24 +60,24 @@ decodeNote =
         (Json.Decode.field "pinned" Json.Decode.bool)
 
 
-encodeNoteBytes : Note -> Bytes.Encode.Encoder
-encodeNoteBytes value =
+encodeNoteBinary : Note -> Bytes.Encode.Encoder
+encodeNoteBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.title
         , Proto.Binary.implicit Proto.Binary.bool 2 value.pinned
         ]
 
 
-decodeNoteBytes : Proto.Binary.Decoder Note
-decodeNoteBytes =
-    noteBytesAs "notes.v1.Note"
+decodeNoteBinary : Proto.Binary.Decoder Note
+decodeNoteBinary =
+    noteBinaryAs "notes.v1.Note"
 
 
 {-| Note's binary decoder under the full name given, the one a message built
 under that name must carry too.
 -}
-noteBytesAs : String -> Proto.Binary.Decoder Note
-noteBytesAs name =
+noteBinaryAs : String -> Proto.Binary.Decoder Note
+noteBinaryAs name =
     Proto.Binary.merge name
         (\number wire value ->
             case number of
@@ -100,7 +100,7 @@ well-known types.
 registry : Registry
 registry =
     Registry.empty
-        |> Registry.register (Message.init "notes.v1.Note" (Proto.Json.succeed << encodeNote) decodeNote encodeNoteBytes decodeNoteBytes)
+        |> Registry.register (Message.init "notes.v1.Note" (Proto.Json.succeed << encodeNote) decodeNote encodeNoteBinary decodeNoteBinary)
         |> Registry.union WellKnown.registry
 
 

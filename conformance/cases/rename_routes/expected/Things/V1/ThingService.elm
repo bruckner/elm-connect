@@ -42,8 +42,8 @@ getThing =
             "GetThing"
             Things.V1.encodeGetThingRequest
             (\_ -> Things.V1.decodeThing)
-            Things.V1.encodeGetThingRequestBytes
-            Things.V1.decodeThingBytes
+            Things.V1.encodeGetThingRequestBinary
+            Things.V1.decodeThingBinary
             |> Proto.Method.withRoutes [ routeGetThing0 ]
         )
 

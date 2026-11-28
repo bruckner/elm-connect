@@ -83,7 +83,8 @@ protocol (Internal.Trace t) =
 
 
 {-| The codec its messages travelled in, as
-[`Rpc.Protocol.codec`](Rpc-Protocol#codec) gives it: `"json"` or `"proto"`.
+[`Rpc.Protocol.codec`](Rpc-Protocol#codec) gives it, in Connect's terms:
+`"json"`, or `"proto"`, Connect's name for the protobuf binary codec.
 -}
 codec : Trace -> String
 codec (Internal.Trace t) =
@@ -209,7 +210,7 @@ that has no entry for its type.`
 (`[]` when every detail was read, or there was no status); `binding`,
 `httpStatus`, the body and the timeout are
 `null` when absent. A request body of protobuf binary
-(a client speaking [`Rpc.Proto`](Rpc#Proto)) is `null` as `body` and is
+(a client speaking [`Rpc.Binary`](Rpc#Binary)) is `null` as `body` and is
 given as base64 under one more key, `bodyBase64`.
 
 The request holds what was sent, the client's headers included, so a bearer

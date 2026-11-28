@@ -382,70 +382,70 @@ enumKind =
 -}
 messageGetMessageRequest : Proto.Message.Message GetMessageRequest
 messageGetMessageRequest =
-    Proto.Message.init "routes.v1.GetMessageRequest" encodeGetMessageRequest decodeGetMessageRequest encodeGetMessageRequestBytes decodeGetMessageRequestBytes
+    Proto.Message.init "routes.v1.GetMessageRequest" encodeGetMessageRequest decodeGetMessageRequest encodeGetMessageRequestBinary decodeGetMessageRequestBinary
 
 
 {-| The typed value of [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage): its full name and codecs.
 -}
 messageGetMessageRequestSubMessage : Proto.Message.Message GetMessageRequestSubMessage
 messageGetMessageRequestSubMessage =
-    Proto.Message.init "routes.v1.GetMessageRequest.SubMessage" encodeGetMessageRequestSubMessage decodeGetMessageRequestSubMessage encodeGetMessageRequestSubMessageBytes decodeGetMessageRequestSubMessageBytes
+    Proto.Message.init "routes.v1.GetMessageRequest.SubMessage" encodeGetMessageRequestSubMessage decodeGetMessageRequestSubMessage encodeGetMessageRequestSubMessageBinary decodeGetMessageRequestSubMessageBinary
 
 
 {-| The typed value of [`Message`](#Message): its full name and codecs.
 -}
 messageMessage : Proto.Message.Message Message
 messageMessage =
-    Proto.Message.init "routes.v1.Message" encodeMessage decodeMessage encodeMessageBytes decodeMessageBytes
+    Proto.Message.init "routes.v1.Message" encodeMessage decodeMessage encodeMessageBinary decodeMessageBinary
 
 
 {-| The typed value of [`UpdateMessageRequest`](#UpdateMessageRequest): its full name and codecs.
 -}
 messageUpdateMessageRequest : Proto.Message.Message UpdateMessageRequest
 messageUpdateMessageRequest =
-    Proto.Message.init "routes.v1.UpdateMessageRequest" encodeUpdateMessageRequest decodeUpdateMessageRequest encodeUpdateMessageRequestBytes decodeUpdateMessageRequestBytes
+    Proto.Message.init "routes.v1.UpdateMessageRequest" encodeUpdateMessageRequest decodeUpdateMessageRequest encodeUpdateMessageRequestBinary decodeUpdateMessageRequestBinary
 
 
 {-| The typed value of [`Everything`](#Everything): its full name and codecs.
 -}
 messageEverything : Proto.Message.Message Everything
 messageEverything =
-    Proto.Message.init "routes.v1.Everything" encodeEverything decodeEverything encodeEverythingBytes decodeEverythingBytes
+    Proto.Message.init "routes.v1.Everything" encodeEverything decodeEverything encodeEverythingBinary decodeEverythingBinary
 
 
 {-| The typed value of [`Inner`](#Inner): its full name and codecs.
 -}
 messageInner : Proto.Message.Message Inner
 messageInner =
-    Proto.Message.init "routes.v1.Inner" encodeInner decodeInner encodeInnerBytes decodeInnerBytes
+    Proto.Message.init "routes.v1.Inner" encodeInner decodeInner encodeInnerBinary decodeInnerBinary
 
 
 {-| The typed value of [`Deep`](#Deep): its full name and codecs.
 -}
 messageDeep : Proto.Message.Message Deep
 messageDeep =
-    Proto.Message.init "routes.v1.Deep" encodeDeep decodeDeep encodeDeepBytes decodeDeepBytes
+    Proto.Message.init "routes.v1.Deep" encodeDeep decodeDeep encodeDeepBinary decodeDeepBinary
 
 
 {-| The typed value of [`FileRequest`](#FileRequest): its full name and codecs.
 -}
 messageFileRequest : Proto.Message.Message FileRequest
 messageFileRequest =
-    Proto.Message.init "routes.v1.FileRequest" encodeFileRequest decodeFileRequest encodeFileRequestBytes decodeFileRequestBytes
+    Proto.Message.init "routes.v1.FileRequest" encodeFileRequest decodeFileRequest encodeFileRequestBinary decodeFileRequestBinary
 
 
 {-| The typed value of [`Resource`](#Resource): its full name and codecs.
 -}
 messageResource : Proto.Message.Message Resource
 messageResource =
-    Proto.Message.init "routes.v1.Resource" encodeResource decodeResource encodeResourceBytes decodeResourceBytes
+    Proto.Message.init "routes.v1.Resource" encodeResource decodeResource encodeResourceBinary decodeResourceBinary
 
 
 {-| The typed value of [`UpdateResourceRequest`](#UpdateResourceRequest): its full name and codecs.
 -}
 messageUpdateResourceRequest : Proto.Message.Message UpdateResourceRequest
 messageUpdateResourceRequest =
-    Proto.Message.init "routes.v1.UpdateResourceRequest" encodeUpdateResourceRequest decodeUpdateResourceRequest encodeUpdateResourceRequestBytes decodeUpdateResourceRequestBytes
+    Proto.Message.init "routes.v1.UpdateResourceRequest" encodeUpdateResourceRequest decodeUpdateResourceRequest encodeUpdateResourceRequestBinary decodeUpdateResourceRequestBinary
 
 
 
@@ -843,8 +843,8 @@ decodeUpdateResourceRequest =
 
 {-| The number protobuf binary writes a [`Kind`](#Kind) as.
 -}
-encodeKindBytes : Kind -> Int
-encodeKindBytes value =
+encodeKindBinary : Kind -> Int
+encodeKindBinary value =
     case value of
         KindUnspecified ->
             0
@@ -858,12 +858,12 @@ encodeKindBytes value =
 
 {-| Encodes a [`GetMessageRequest`](#GetMessageRequest) as protobuf binary.
 -}
-encodeGetMessageRequestBytes : GetMessageRequest -> Bytes.Encode.Encoder
-encodeGetMessageRequestBytes value =
+encodeGetMessageRequestBinary : GetMessageRequest -> Bytes.Encode.Encoder
+encodeGetMessageRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.messageId
         , Proto.Binary.implicit Proto.Binary.int64 2 value.revision
-        , Proto.Binary.optional (Proto.Binary.embedded encodeGetMessageRequestSubMessageBytes mergeGetMessageRequestSubMessageBytes defaultGetMessageRequestSubMessage) 3 value.sub
+        , Proto.Binary.optional (Proto.Binary.embedded encodeGetMessageRequestSubMessageBinary mergeGetMessageRequestSubMessageBinary defaultGetMessageRequestSubMessage) 3 value.sub
         , Proto.Binary.implicit Proto.Binary.string 4 value.userId
         , Proto.Binary.implicit Proto.Binary.string 5 value.name
         ]
@@ -871,8 +871,8 @@ encodeGetMessageRequestBytes value =
 
 {-| Encodes a [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) as protobuf binary.
 -}
-encodeGetMessageRequestSubMessageBytes : GetMessageRequestSubMessage -> Bytes.Encode.Encoder
-encodeGetMessageRequestSubMessageBytes value =
+encodeGetMessageRequestSubMessageBinary : GetMessageRequestSubMessage -> Bytes.Encode.Encoder
+encodeGetMessageRequestSubMessageBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.subfield
         ]
@@ -880,8 +880,8 @@ encodeGetMessageRequestSubMessageBytes value =
 
 {-| Encodes a [`Message`](#Message) as protobuf binary.
 -}
-encodeMessageBytes : Message -> Bytes.Encode.Encoder
-encodeMessageBytes value =
+encodeMessageBinary : Message -> Bytes.Encode.Encoder
+encodeMessageBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.messageId
         , Proto.Binary.implicit Proto.Binary.string 2 value.text
@@ -890,18 +890,18 @@ encodeMessageBytes value =
 
 {-| Encodes an [`UpdateMessageRequest`](#UpdateMessageRequest) as protobuf binary.
 -}
-encodeUpdateMessageRequestBytes : UpdateMessageRequest -> Bytes.Encode.Encoder
-encodeUpdateMessageRequestBytes value =
+encodeUpdateMessageRequestBinary : UpdateMessageRequest -> Bytes.Encode.Encoder
+encodeUpdateMessageRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.messageId
-        , Proto.Binary.optional (Proto.Binary.embedded encodeMessageBytes mergeMessageBytes defaultMessage) 2 value.message
+        , Proto.Binary.optional (Proto.Binary.embedded encodeMessageBinary mergeMessageBinary defaultMessage) 2 value.message
         ]
 
 
 {-| Encodes an [`Everything`](#Everything) as protobuf binary.
 -}
-encodeEverythingBytes : Everything -> Bytes.Encode.Encoder
-encodeEverythingBytes value =
+encodeEverythingBinary : Everything -> Bytes.Encode.Encoder
+encodeEverythingBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.int32 2 value.count
@@ -911,9 +911,9 @@ encodeEverythingBytes value =
         , Proto.Binary.implicit Proto.Binary.double 6 value.ratio
         , Proto.Binary.implicit Proto.Binary.float 7 value.scale
         , Proto.Binary.implicit Proto.Binary.bytes 8 value.data
-        , Proto.Binary.implicit (Proto.Binary.enum encodeKindBytes decodeKindBytes) 9 value.kind
+        , Proto.Binary.implicit (Proto.Binary.enum encodeKindBinary decodeKindBinary) 9 value.kind
         , Proto.Binary.list Proto.Binary.string 10 value.tags
-        , Proto.Binary.list (Proto.Binary.enum encodeKindBytes decodeKindBytes) 11 value.kinds
+        , Proto.Binary.list (Proto.Binary.enum encodeKindBinary decodeKindBinary) 11 value.kinds
         , Proto.Binary.list Proto.Binary.int32 12 value.numbers
         , Proto.Binary.optional Proto.Binary.int32 13 value.maybeCount
         , Proto.Binary.optional Proto.Binary.string 14 value.maybeName
@@ -922,15 +922,15 @@ encodeEverythingBytes value =
         , Proto.Binary.optional Proto.Binary.fieldMask 17 value.mask
         , Proto.Binary.optional Proto.Binary.int32Value 18 value.limit
         , Proto.Binary.optional Proto.Binary.stringValue 19 value.label
-        , Proto.Binary.optional (Proto.Binary.embedded encodeInnerBytes mergeInnerBytes defaultInner) 20 value.inner
-        , encodeEverythingChoiceBytes value.choice
+        , Proto.Binary.optional (Proto.Binary.embedded encodeInnerBinary mergeInnerBinary defaultInner) 20 value.inner
+        , encodeEverythingChoiceBinary value.choice
         ]
 
 
 {-| Encodes an [`EverythingChoice`](#EverythingChoice) as protobuf binary: its set member's field.
 -}
-encodeEverythingChoiceBytes : EverythingChoice -> Bytes.Encode.Encoder
-encodeEverythingChoiceBytes value =
+encodeEverythingChoiceBinary : EverythingChoice -> Bytes.Encode.Encoder
+encodeEverythingChoiceBinary value =
     case value of
         EverythingChoiceUnset ->
             Bytes.Encode.sequence []
@@ -944,18 +944,18 @@ encodeEverythingChoiceBytes value =
 
 {-| Encodes an [`Inner`](#Inner) as protobuf binary.
 -}
-encodeInnerBytes : Inner -> Bytes.Encode.Encoder
-encodeInnerBytes value =
+encodeInnerBinary : Inner -> Bytes.Encode.Encoder
+encodeInnerBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.a
-        , Proto.Binary.optional (Proto.Binary.embedded encodeDeepBytes mergeDeepBytes defaultDeep) 2 value.deep
+        , Proto.Binary.optional (Proto.Binary.embedded encodeDeepBinary mergeDeepBinary defaultDeep) 2 value.deep
         ]
 
 
 {-| Encodes a [`Deep`](#Deep) as protobuf binary.
 -}
-encodeDeepBytes : Deep -> Bytes.Encode.Encoder
-encodeDeepBytes value =
+encodeDeepBinary : Deep -> Bytes.Encode.Encoder
+encodeDeepBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.int32 1 value.b
         , Proto.Binary.list Proto.Binary.string 2 value.c
@@ -964,8 +964,8 @@ encodeDeepBytes value =
 
 {-| Encodes a [`FileRequest`](#FileRequest) as protobuf binary.
 -}
-encodeFileRequestBytes : FileRequest -> Bytes.Encode.Encoder
-encodeFileRequestBytes value =
+encodeFileRequestBinary : FileRequest -> Bytes.Encode.Encoder
+encodeFileRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.path
         ]
@@ -973,23 +973,23 @@ encodeFileRequestBytes value =
 
 {-| Encodes a [`Resource`](#Resource) as protobuf binary.
 -}
-encodeResourceBytes : Resource -> Bytes.Encode.Encoder
-encodeResourceBytes value =
+encodeResourceBinary : Resource -> Bytes.Encode.Encoder
+encodeResourceBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.string 2 value.displayName
         , Proto.Binary.dict Proto.Binary.string Proto.Binary.string 3 value.labels
-        , Proto.Binary.dict Proto.Binary.int64 (Proto.Binary.enum encodeKindBytes decodeKindBytes) 4 value.kinds
+        , Proto.Binary.dict Proto.Binary.int64 (Proto.Binary.enum encodeKindBinary decodeKindBinary) 4 value.kinds
         , Proto.Binary.boolMap Proto.Binary.double 5 value.weights
         ]
 
 
 {-| Encodes an [`UpdateResourceRequest`](#UpdateResourceRequest) as protobuf binary.
 -}
-encodeUpdateResourceRequestBytes : UpdateResourceRequest -> Bytes.Encode.Encoder
-encodeUpdateResourceRequestBytes value =
+encodeUpdateResourceRequestBinary : UpdateResourceRequest -> Bytes.Encode.Encoder
+encodeUpdateResourceRequestBinary value =
     Bytes.Encode.sequence
-        [ Proto.Binary.optional (Proto.Binary.embedded encodeResourceBytes mergeResourceBytes defaultResource) 1 value.resource
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeResourceBinary mergeResourceBinary defaultResource) 1 value.resource
         , Proto.Binary.optional Proto.Binary.fieldMask 2 value.updateMask
         ]
 
@@ -1000,8 +1000,8 @@ encodeUpdateResourceRequestBytes value =
 
 {-| A [`Kind`](#Kind) from the number protobuf binary carries.
 -}
-decodeKindBytes : Int -> Kind
-decodeKindBytes number =
+decodeKindBinary : Int -> Kind
+decodeKindBinary number =
     case number of
         1 ->
             KindText
@@ -1015,8 +1015,8 @@ decodeKindBytes number =
 
 {-| Decodes a [`GetMessageRequest`](#GetMessageRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeGetMessageRequestBytes : GetMessageRequest -> Proto.Binary.Decoder GetMessageRequest
-mergeGetMessageRequestBytes =
+mergeGetMessageRequestBinary : GetMessageRequest -> Proto.Binary.Decoder GetMessageRequest
+mergeGetMessageRequestBinary =
     Proto.Binary.merge
         "routes.v1.GetMessageRequest"
         (\number wire value ->
@@ -1051,7 +1051,7 @@ mergeGetMessageRequestBytes =
 
                 3 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeGetMessageRequestSubMessageBytes mergeGetMessageRequestSubMessageBytes defaultGetMessageRequestSubMessage)
+                        (Proto.Binary.embedded encodeGetMessageRequestSubMessageBinary mergeGetMessageRequestSubMessageBinary defaultGetMessageRequestSubMessage)
                         value.sub
                         (\v ->
                             { messageId = value.messageId
@@ -1100,15 +1100,15 @@ mergeGetMessageRequestBytes =
 
 {-| Decodes a [`GetMessageRequest`](#GetMessageRequest) from protobuf binary.
 -}
-decodeGetMessageRequestBytes : Proto.Binary.Decoder GetMessageRequest
-decodeGetMessageRequestBytes =
-    mergeGetMessageRequestBytes defaultGetMessageRequest
+decodeGetMessageRequestBinary : Proto.Binary.Decoder GetMessageRequest
+decodeGetMessageRequestBinary =
+    mergeGetMessageRequestBinary defaultGetMessageRequest
 
 
 {-| Decodes a [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeGetMessageRequestSubMessageBytes : GetMessageRequestSubMessage -> Proto.Binary.Decoder GetMessageRequestSubMessage
-mergeGetMessageRequestSubMessageBytes =
+mergeGetMessageRequestSubMessageBinary : GetMessageRequestSubMessage -> Proto.Binary.Decoder GetMessageRequestSubMessage
+mergeGetMessageRequestSubMessageBinary =
     Proto.Binary.merge
         "routes.v1.GetMessageRequest.SubMessage"
         (\number wire value ->
@@ -1131,15 +1131,15 @@ mergeGetMessageRequestSubMessageBytes =
 
 {-| Decodes a [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) from protobuf binary.
 -}
-decodeGetMessageRequestSubMessageBytes : Proto.Binary.Decoder GetMessageRequestSubMessage
-decodeGetMessageRequestSubMessageBytes =
-    mergeGetMessageRequestSubMessageBytes defaultGetMessageRequestSubMessage
+decodeGetMessageRequestSubMessageBinary : Proto.Binary.Decoder GetMessageRequestSubMessage
+decodeGetMessageRequestSubMessageBinary =
+    mergeGetMessageRequestSubMessageBinary defaultGetMessageRequestSubMessage
 
 
 {-| Decodes a [`Message`](#Message) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeMessageBytes : Message -> Proto.Binary.Decoder Message
-mergeMessageBytes =
+mergeMessageBinary : Message -> Proto.Binary.Decoder Message
+mergeMessageBinary =
     Proto.Binary.merge
         "routes.v1.Message"
         (\number wire value ->
@@ -1174,15 +1174,15 @@ mergeMessageBytes =
 
 {-| Decodes a [`Message`](#Message) from protobuf binary.
 -}
-decodeMessageBytes : Proto.Binary.Decoder Message
-decodeMessageBytes =
-    mergeMessageBytes defaultMessage
+decodeMessageBinary : Proto.Binary.Decoder Message
+decodeMessageBinary =
+    mergeMessageBinary defaultMessage
 
 
 {-| Decodes an [`UpdateMessageRequest`](#UpdateMessageRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeUpdateMessageRequestBytes : UpdateMessageRequest -> Proto.Binary.Decoder UpdateMessageRequest
-mergeUpdateMessageRequestBytes =
+mergeUpdateMessageRequestBinary : UpdateMessageRequest -> Proto.Binary.Decoder UpdateMessageRequest
+mergeUpdateMessageRequestBinary =
     Proto.Binary.merge
         "routes.v1.UpdateMessageRequest"
         (\number wire value ->
@@ -1200,7 +1200,7 @@ mergeUpdateMessageRequestBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeMessageBytes mergeMessageBytes defaultMessage)
+                        (Proto.Binary.embedded encodeMessageBinary mergeMessageBinary defaultMessage)
                         value.message
                         (\v ->
                             { messageId = value.messageId
@@ -1218,15 +1218,15 @@ mergeUpdateMessageRequestBytes =
 
 {-| Decodes an [`UpdateMessageRequest`](#UpdateMessageRequest) from protobuf binary.
 -}
-decodeUpdateMessageRequestBytes : Proto.Binary.Decoder UpdateMessageRequest
-decodeUpdateMessageRequestBytes =
-    mergeUpdateMessageRequestBytes defaultUpdateMessageRequest
+decodeUpdateMessageRequestBinary : Proto.Binary.Decoder UpdateMessageRequest
+decodeUpdateMessageRequestBinary =
+    mergeUpdateMessageRequestBinary defaultUpdateMessageRequest
 
 
 {-| Decodes an [`Everything`](#Everything) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeEverythingBytes : Everything -> Proto.Binary.Decoder Everything
-mergeEverythingBytes =
+mergeEverythingBinary : Everything -> Proto.Binary.Decoder Everything
+mergeEverythingBinary =
     Proto.Binary.merge
         "routes.v1.Everything"
         (\number wire value ->
@@ -1473,7 +1473,7 @@ mergeEverythingBytes =
 
                 9 ->
                     Proto.Binary.field
-                        (Proto.Binary.enum encodeKindBytes decodeKindBytes)
+                        (Proto.Binary.enum encodeKindBinary decodeKindBinary)
                         (\v ->
                             { name = value.name
                             , count = value.count
@@ -1534,7 +1534,7 @@ mergeEverythingBytes =
 
                 11 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.enum encodeKindBytes decodeKindBytes)
+                        (Proto.Binary.enum encodeKindBinary decodeKindBinary)
                         (\v ->
                             { name = value.name
                             , count = value.count
@@ -1806,7 +1806,7 @@ mergeEverythingBytes =
 
                 20 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeInnerBytes mergeInnerBytes defaultInner)
+                        (Proto.Binary.embedded encodeInnerBinary mergeInnerBinary defaultInner)
                         value.inner
                         (\v ->
                             { name = value.name
@@ -1926,15 +1926,15 @@ mergeEverythingBytes =
 
 {-| Decodes an [`Everything`](#Everything) from protobuf binary.
 -}
-decodeEverythingBytes : Proto.Binary.Decoder Everything
-decodeEverythingBytes =
-    mergeEverythingBytes defaultEverything
+decodeEverythingBinary : Proto.Binary.Decoder Everything
+decodeEverythingBinary =
+    mergeEverythingBinary defaultEverything
 
 
 {-| Decodes an [`Inner`](#Inner) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeInnerBytes : Inner -> Proto.Binary.Decoder Inner
-mergeInnerBytes =
+mergeInnerBinary : Inner -> Proto.Binary.Decoder Inner
+mergeInnerBinary =
     Proto.Binary.merge
         "routes.v1.Inner"
         (\number wire value ->
@@ -1952,7 +1952,7 @@ mergeInnerBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeDeepBytes mergeDeepBytes defaultDeep)
+                        (Proto.Binary.embedded encodeDeepBinary mergeDeepBinary defaultDeep)
                         value.deep
                         (\v ->
                             { a = value.a
@@ -1970,15 +1970,15 @@ mergeInnerBytes =
 
 {-| Decodes an [`Inner`](#Inner) from protobuf binary.
 -}
-decodeInnerBytes : Proto.Binary.Decoder Inner
-decodeInnerBytes =
-    mergeInnerBytes defaultInner
+decodeInnerBinary : Proto.Binary.Decoder Inner
+decodeInnerBinary =
+    mergeInnerBinary defaultInner
 
 
 {-| Decodes a [`Deep`](#Deep) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeDeepBytes : Deep -> Proto.Binary.Decoder Deep
-mergeDeepBytes =
+mergeDeepBinary : Deep -> Proto.Binary.Decoder Deep
+mergeDeepBinary =
     Proto.Binary.merge
         "routes.v1.Deep"
         (\number wire value ->
@@ -2018,15 +2018,15 @@ mergeDeepBytes =
 
 {-| Decodes a [`Deep`](#Deep) from protobuf binary.
 -}
-decodeDeepBytes : Proto.Binary.Decoder Deep
-decodeDeepBytes =
-    mergeDeepBytes defaultDeep
+decodeDeepBinary : Proto.Binary.Decoder Deep
+decodeDeepBinary =
+    mergeDeepBinary defaultDeep
 
 
 {-| Decodes a [`FileRequest`](#FileRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeFileRequestBytes : FileRequest -> Proto.Binary.Decoder FileRequest
-mergeFileRequestBytes =
+mergeFileRequestBinary : FileRequest -> Proto.Binary.Decoder FileRequest
+mergeFileRequestBinary =
     Proto.Binary.merge
         "routes.v1.FileRequest"
         (\number wire value ->
@@ -2049,15 +2049,15 @@ mergeFileRequestBytes =
 
 {-| Decodes a [`FileRequest`](#FileRequest) from protobuf binary.
 -}
-decodeFileRequestBytes : Proto.Binary.Decoder FileRequest
-decodeFileRequestBytes =
-    mergeFileRequestBytes defaultFileRequest
+decodeFileRequestBinary : Proto.Binary.Decoder FileRequest
+decodeFileRequestBinary =
+    mergeFileRequestBinary defaultFileRequest
 
 
 {-| Decodes a [`Resource`](#Resource) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeResourceBytes : Resource -> Proto.Binary.Decoder Resource
-mergeResourceBytes =
+mergeResourceBinary : Resource -> Proto.Binary.Decoder Resource
+mergeResourceBinary =
     Proto.Binary.merge
         "routes.v1.Resource"
         (\number wire value ->
@@ -2108,7 +2108,7 @@ mergeResourceBytes =
                 4 ->
                     Proto.Binary.mapEntry
                         Proto.Binary.int64
-                        (Proto.Binary.enum encodeKindBytes decodeKindBytes)
+                        (Proto.Binary.enum encodeKindBinary decodeKindBinary)
                         (\k v ->
                             { name = value.name
                             , displayName = value.displayName
@@ -2150,22 +2150,22 @@ mergeResourceBytes =
 
 {-| Decodes a [`Resource`](#Resource) from protobuf binary.
 -}
-decodeResourceBytes : Proto.Binary.Decoder Resource
-decodeResourceBytes =
-    mergeResourceBytes defaultResource
+decodeResourceBinary : Proto.Binary.Decoder Resource
+decodeResourceBinary =
+    mergeResourceBinary defaultResource
 
 
 {-| Decodes an [`UpdateResourceRequest`](#UpdateResourceRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeUpdateResourceRequestBytes : UpdateResourceRequest -> Proto.Binary.Decoder UpdateResourceRequest
-mergeUpdateResourceRequestBytes =
+mergeUpdateResourceRequestBinary : UpdateResourceRequest -> Proto.Binary.Decoder UpdateResourceRequest
+mergeUpdateResourceRequestBinary =
     Proto.Binary.merge
         "routes.v1.UpdateResourceRequest"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeResourceBytes mergeResourceBytes defaultResource)
+                        (Proto.Binary.embedded encodeResourceBinary mergeResourceBinary defaultResource)
                         value.resource
                         (\v ->
                             { resource = Just v
@@ -2194,9 +2194,9 @@ mergeUpdateResourceRequestBytes =
 
 {-| Decodes an [`UpdateResourceRequest`](#UpdateResourceRequest) from protobuf binary.
 -}
-decodeUpdateResourceRequestBytes : Proto.Binary.Decoder UpdateResourceRequest
-decodeUpdateResourceRequestBytes =
-    mergeUpdateResourceRequestBytes defaultUpdateResourceRequest
+decodeUpdateResourceRequestBinary : Proto.Binary.Decoder UpdateResourceRequest
+decodeUpdateResourceRequestBinary =
+    mergeUpdateResourceRequestBinary defaultUpdateResourceRequest
 
 
 

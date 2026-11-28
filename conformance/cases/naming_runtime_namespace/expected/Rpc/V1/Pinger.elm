@@ -38,8 +38,8 @@ send =
             "Send"
             Rpc.V1.encodePing
             (\_ -> Rpc.V1.decodePing)
-            Rpc.V1.encodePingBytes
-            Rpc.V1.decodePingBytes
+            Rpc.V1.encodePingBinary
+            Rpc.V1.decodePingBinary
         )
 
 

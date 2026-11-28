@@ -125,14 +125,14 @@ defaultEmpty =
 -}
 messageScalars : Proto.Message.Message Scalars
 messageScalars =
-    Proto.Message.init "scalars.v1.Scalars" encodeScalars decodeScalars encodeScalarsBytes decodeScalarsBytes
+    Proto.Message.init "scalars.v1.Scalars" encodeScalars decodeScalars encodeScalarsBinary decodeScalarsBinary
 
 
 {-| The typed value of [`Empty`](#Empty): its full name and codecs.
 -}
 messageEmpty : Proto.Message.Message Empty
 messageEmpty =
-    Proto.Message.init "scalars.v1.Empty" encodeEmpty decodeEmpty encodeEmptyBytes decodeEmptyBytes
+    Proto.Message.init "scalars.v1.Empty" encodeEmpty decodeEmpty encodeEmptyBinary decodeEmptyBinary
 
 
 
@@ -243,8 +243,8 @@ decodeEmpty =
 
 {-| Encodes a [`Scalars`](#Scalars) as protobuf binary.
 -}
-encodeScalarsBytes : Scalars -> Bytes.Encode.Encoder
-encodeScalarsBytes value =
+encodeScalarsBinary : Scalars -> Bytes.Encode.Encoder
+encodeScalarsBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.double 1 value.doubleValue
         , Proto.Binary.implicit Proto.Binary.float 2 value.floatValue
@@ -268,8 +268,8 @@ encodeScalarsBytes value =
 
 {-| Encodes an [`Empty`](#Empty) as protobuf binary.
 -}
-encodeEmptyBytes : Empty -> Bytes.Encode.Encoder
-encodeEmptyBytes _ =
+encodeEmptyBinary : Empty -> Bytes.Encode.Encoder
+encodeEmptyBinary _ =
     Bytes.Encode.sequence []
 
 
@@ -279,8 +279,8 @@ encodeEmptyBytes _ =
 
 {-| Decodes a [`Scalars`](#Scalars) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeScalarsBytes : Scalars -> Proto.Binary.Decoder Scalars
-mergeScalarsBytes =
+mergeScalarsBinary : Scalars -> Proto.Binary.Decoder Scalars
+mergeScalarsBinary =
     Proto.Binary.merge
         "scalars.v1.Scalars"
         (\number wire value ->
@@ -735,20 +735,20 @@ mergeScalarsBytes =
 
 {-| Decodes a [`Scalars`](#Scalars) from protobuf binary.
 -}
-decodeScalarsBytes : Proto.Binary.Decoder Scalars
-decodeScalarsBytes =
-    mergeScalarsBytes defaultScalars
+decodeScalarsBinary : Proto.Binary.Decoder Scalars
+decodeScalarsBinary =
+    mergeScalarsBinary defaultScalars
 
 
 {-| Decodes an [`Empty`](#Empty) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeEmptyBytes : Empty -> Proto.Binary.Decoder Empty
-mergeEmptyBytes =
+mergeEmptyBinary : Empty -> Proto.Binary.Decoder Empty
+mergeEmptyBinary =
     Proto.Binary.merge "scalars.v1.Empty" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes an [`Empty`](#Empty) from protobuf binary.
 -}
-decodeEmptyBytes : Proto.Binary.Decoder Empty
-decodeEmptyBytes =
-    mergeEmptyBytes defaultEmpty
+decodeEmptyBinary : Proto.Binary.Decoder Empty
+decodeEmptyBinary =
+    mergeEmptyBinary defaultEmpty

@@ -65,8 +65,8 @@ getNote =
             "GetNote"
             Notes.V1.encodeGetNoteRequest
             Notes.V1.decodeNoteWith
-            Notes.V1.encodeGetNoteRequestBytes
-            Notes.V1.decodeNoteBytes
+            Notes.V1.encodeGetNoteRequestBinary
+            Notes.V1.decodeNoteBinary
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeGetNote0 ]
         )
@@ -88,8 +88,8 @@ listNotes =
             "ListNotes"
             Notes.V1.encodeListNotesRequest
             Notes.V1.decodeListNotesResponseWith
-            Notes.V1.encodeListNotesRequestBytes
-            Notes.V1.decodeListNotesResponseBytes
+            Notes.V1.encodeListNotesRequestBinary
+            Notes.V1.decodeListNotesResponseBinary
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeListNotes0 ]
         )
@@ -113,8 +113,8 @@ createNote =
             "CreateNote"
             Notes.V1.encodeCreateNoteRequest
             Notes.V1.decodeNoteWith
-            Notes.V1.encodeCreateNoteRequestBytes
-            Notes.V1.decodeNoteBytes
+            Notes.V1.encodeCreateNoteRequestBinary
+            Notes.V1.decodeNoteBinary
             |> Proto.Method.withJsonRoutes [ routeCreateNote0 ]
         )
 
@@ -135,8 +135,8 @@ updateNote =
             "UpdateNote"
             Notes.V1.encodeUpdateNoteRequest
             Notes.V1.decodeNoteWith
-            Notes.V1.encodeUpdateNoteRequestBytes
-            Notes.V1.decodeNoteBytes
+            Notes.V1.encodeUpdateNoteRequestBinary
+            Notes.V1.decodeNoteBinary
             |> Proto.Method.withJsonRoutes [ routeUpdateNote0 ]
         )
 
@@ -157,7 +157,7 @@ deleteNote =
             "DeleteNote"
             Notes.V1.encodeDeleteNoteRequest
             (\_ -> Proto.Json.empty)
-            Notes.V1.encodeDeleteNoteRequestBytes
+            Notes.V1.encodeDeleteNoteRequestBinary
             (Proto.Binary.messageDecoder Proto.Binary.empty)
             |> Proto.Method.withRoutes [ routeDeleteNote0 ]
         )
@@ -179,8 +179,8 @@ archiveNote =
             "ArchiveNote"
             Notes.V1.encodeArchiveNoteRequest
             Notes.V1.decodeNoteWith
-            Notes.V1.encodeArchiveNoteRequestBytes
-            Notes.V1.decodeNoteBytes
+            Notes.V1.encodeArchiveNoteRequestBinary
+            Notes.V1.decodeNoteBinary
             |> Proto.Method.withRoutes [ routeArchiveNote0 ]
         )
 

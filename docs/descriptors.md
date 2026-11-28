@@ -12,7 +12,7 @@ are listed with the other specifications in [specs.md](specs.md).
 
 Each message and enum has a typed value: `Notes.V1.messageNote :
 Proto.Message.Message Note` holds the message's full name and both its
-codecs, proto3 JSON and protobuf binary, whatever the `wire` option
+codecs, proto3 JSON and protobuf binary, whatever the `codec` option
 says; `Notes.V1.enumVisibility : Proto.Enum.Enum Visibility` holds an
 enum's codecs, zero value and descriptor. `Proto.Message.typeName`
 reads a message's; `Proto.Enum` reads an enum's with `encode`,
@@ -177,10 +177,10 @@ depth, not the time.
 The conversion happens when an `Any` is read from JSON
 (`Proto.Json.anyWith`, any JSON answer holding one) and when one is
 written as JSON (`Proto.Json.encodeWith`, `Proto.Any.toJson`, a JSON
-request holding one). Over the proto codec an `Any` is read and sent as
+request holding one). Over the binary codec an `Any` is read and sent as
 its bytes, unconverted, and `Proto.Any.unpack` reads its message once.
 So keep large payloads out of nested `Any`s: hold them in an ordinary
-field, or in an `Any` at the top of the message; prefer the proto codec
+field, or in an `Any` at the top of the message; prefer the binary codec
 for calls that carry them; and cap what an answer may hand the
 conversion with `Rpc.Protocol.withReadMaxBytes`
 ([calling.md](calling.md#size-limits)), which refuses a larger body

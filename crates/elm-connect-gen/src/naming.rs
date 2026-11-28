@@ -412,9 +412,9 @@ pub fn decoder_name(type_elm_name: &str) -> String {
 /// `EncodeFoo`.)
 ///
 /// The binary codecs break that rule once, on purpose: they are named for
-/// the JSON codecs with `Bytes` at the end (`encodeFooBytes`,
-/// `decodeFooBytes`, `mergeFooBytes`), so the JSON codecs of a type
-/// `FooBytes` would take the names of `Foo`'s binary codecs. The IR
+/// the JSON codecs with `Binary` at the end (`encodeFooBinary`,
+/// `decodeFooBinary`, `mergeFooBinary`), so the JSON codecs of a type
+/// `FooBinary` would take the names of `Foo`'s binary codecs. The IR
 /// builder reports that (`naming::codec_collision`) under the options that
 /// generate both. `merge` begins no JSON codec, so a merge never meets one.
 pub fn default_name(type_elm_name: &str) -> String {
@@ -555,7 +555,7 @@ pub const REGISTRY: &str = "registry";
 /// The JSON decoder of a message, oneof or wrapper that reaches a
 /// `google.protobuf.Any`, which takes the registry: its decoder's name
 /// with `With` at the end (`decodeNoteWith`). Like the binary codecs'
-/// `Bytes`, the suffix breaks the prefix rule of [`default_name`]: the
+/// `Binary`, the suffix breaks the prefix rule of [`default_name`]: the
 /// JSON decoder of a type `NoteWith` would take this name, which the IR
 /// builder reports (`naming::codec_collision`).
 pub fn with_registry(codec_name: String) -> String {
@@ -565,15 +565,20 @@ pub fn with_registry(codec_name: String) -> String {
 /// The suffix of [`with_registry`].
 pub const WITH_SUFFIX: &str = "With";
 
+/// The suffix that names a type's binary codecs for its JSON codecs
+/// (`encodeNote` becomes `encodeNoteBinary`), for the emitter that names
+/// them and the IR builder that checks no other type's codecs take them.
+pub const BINARY_SUFFIX: &str = "Binary";
+
 /// A recursive message's codec, or its oneof's or wrapper's, given the
 /// nesting depth it reads at: its codec's name with `Nested` after the
 /// verb (`decodeNestedNode`, `decodeNestedNodeWith`,
-/// `mergeNestedNodeBytes`, `mergeNestedNode_Bytes`). Every name of a codec
+/// `mergeNestedNodeBinary`, `mergeNestedNode_Binary`). Every name of a codec
 /// at a depth comes from here, so renaming them is a change to this
 /// function alone. Like [`with_registry`]'s suffix, the infix breaks the
 /// prefix rule of [`default_name`]: the codecs of a type `NestedNode`
 /// beside a recursive `Node` would take these names (its JSON decoder is
-/// `decodeNestedNode`, its merge `mergeNestedNodeBytes`), which no check
+/// `decodeNestedNode`, its merge `mergeNestedNodeBinary`), which no check
 /// reports; the compiler does, as a name defined twice.
 pub fn nested(codec_name: String) -> String {
     let verb = codec_name

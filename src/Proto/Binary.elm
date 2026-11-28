@@ -17,13 +17,13 @@ module Proto.Binary exposing
     )
 
 {-| The protobuf binary wire format, over elm/bytes: the helpers generated
-binary codecs (`encodeNoteBytes`, `decodeNoteBytes`) are written with.
+binary codecs (`encodeNoteBinary`, `decodeNoteBinary`) are written with.
 
 A message's [`Decoder`](#Decoder) reads it from a whole input with
 [`decode`](#decode), or into a value already read, as protobuf merges a
 message that arrives twice.
 
-    Proto.Binary.decode Notes.V1.decodeNoteBytes body
+    Proto.Binary.decode Notes.V1.decodeNoteBinary body
     --> Ok note
 
 Encoders write fields in field-number order, leave out a field without
@@ -117,11 +117,11 @@ import Proto.Value exposing (Value(..))
 
 
 {-| Decode a whole input as one message, with its generated decoder
-(`decodeNoteBytes`), or say why the bytes are not that message: the
+(`decodeNoteBinary`), or say why the bytes are not that message: the
 [`Reason`](Proto-Error#Reason), the fields it is in and the offset of the
 first byte that could not be read.
 
-    Proto.Binary.decode Notes.V1.decodeNoteBytes truncated
+    Proto.Binary.decode Notes.V1.decodeNoteBinary truncated
     --> Err { typeName = "notes.v1.Note", reason = Proto.Error.Truncated, path = [ ( "notes.v1.Note", 2 ) ], offset = 9 }
 
 -}
@@ -131,8 +131,8 @@ decode =
 
 
 {-| How a message is read from protobuf binary: generated code gives one per
-message, `decodeNoteBytes : Decoder Note`, and one reading into a value
-already read, `mergeNoteBytes : Note -> Decoder Note`. Run one with
+message, `decodeNoteBinary : Decoder Note`, and one reading into a value
+already read, `mergeNoteBinary : Note -> Decoder Note`. Run one with
 [`decode`](#decode). The package site and compiler errors may show it as
 `Proto.Internal.Binary.Decoder`, its name inside the package.
 -}
@@ -162,7 +162,7 @@ fastRun (Internal.Decoder d) =
     d.fast
 
 
-{-| Encode a message with its generated encoder (`encodeNoteBytes`).
+{-| Encode a message with its generated encoder (`encodeNoteBinary`).
 -}
 encode : (a -> Encoder) -> a -> Bytes
 encode encoder input =
@@ -323,8 +323,8 @@ code reverses its lists there, which is why `merge` applies it to `start`
 too: a finished value's lists turned back the way the step builds them, so
 repeated fields read into a value add to its elements.
 
-    mergeLeafBytes : Leaf -> Proto.Binary.Decoder Leaf
-    mergeLeafBytes =
+    mergeLeafBinary : Leaf -> Proto.Binary.Decoder Leaf
+    mergeLeafBinary =
         Proto.Binary.merge "pkg.Leaf"
             (\number wire value ->
                 case number of
@@ -336,9 +336,9 @@ repeated fields read into a value add to its elements.
             )
             identity
 
-    decodeLeafBytes : Proto.Binary.Decoder Leaf
-    decodeLeafBytes =
-        mergeLeafBytes defaultLeaf
+    decodeLeafBinary : Proto.Binary.Decoder Leaf
+    decodeLeafBinary =
+        mergeLeafBinary defaultLeaf
 
 -}
 merge : String -> (Int -> Int -> a -> Field a) -> (a -> a) -> a -> Decoder a
@@ -752,8 +752,8 @@ already. `wires` gives the wire types a field number takes, as bits (`4` for
 a length-delimited field, wire type 2), `0` for a number the message does
 not declare; `get` and `set` reach the message's unknown fields.
 
-    mergeLeafBytes : Leaf -> Proto.Binary.Decoder Leaf
-    mergeLeafBytes =
+    mergeLeafBinary : Leaf -> Proto.Binary.Decoder Leaf
+    mergeLeafBinary =
         Proto.Binary.mergeKeep "pkg.Leaf"
             (\number ->
                 case number of
@@ -1235,7 +1235,7 @@ enum toNumber fromNumber =
 
 
 {-| A message field's codec, from the message's generated encoder, its
-decoder into a value read before (`mergeNoteBytes`) and its default:
+decoder into a value read before (`mergeNoteBinary`) and its default:
 length-delimited, and written whenever present.
 -}
 embedded : (a -> Encoder) -> (a -> Decoder a) -> a -> Codec a
@@ -1297,7 +1297,7 @@ past 100 levels fails with [`TooDeep`](Proto-Error#Reason), as protobuf
 implementations refuse a message nested past 100 levels; writing is not
 limited.
 
-    Proto.Binary.recursive depth encodeNode_Bytes mergeNestedNode_Bytes (Node_ defaultNode)
+    Proto.Binary.recursive depth encodeNode_Binary mergeNestedNode_Binary (Node_ defaultNode)
 
 -}
 recursive : Int -> (a -> Encoder) -> (Int -> a -> Decoder a) -> a -> Codec a
@@ -1316,7 +1316,7 @@ generated code applies it, it makes them once per program, and a read looks
 its merge up. Past 100 the merge is made when asked for, and each field it
 reads at a depth fails with [`TooDeep`](Proto-Error#Reason).
 
-    mergeNestedNodeBytes =
+    mergeNestedNodeBinary =
         Proto.Binary.memo (\depth -> Proto.Binary.merge ...)
 
 -}

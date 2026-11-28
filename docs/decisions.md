@@ -1912,8 +1912,12 @@ Where: design §4, §5.2, §5.3.
 2026-10-30, because the package site showed `Proto.Method`'s signatures
 naming `Proto.Internal.Codec.Json`, a module it does not document. The
 `Rpc` aliases stay, the names an application writes. The generator
-option written `codec=` below is `wire=` since 2026-11-12, default
-`both` (Wire chosen by the client, not by import).*
+option written `codec=` below was `wire=` from 2026-11-12, default
+`both` (Wire chosen by the client, not by import), and is `codec=`
+again since 2026-11-27, its binary value `binary` (The option is
+`codec=` again). Since 2026-11-27 the tag `Rpc.Proto` is `Rpc.Binary`
+and `connectProto` is `connectBinary` (Binary is the word for the
+binary format).*
 
 The config record and `Rpc.Transport` are replaced by two opaque
 types: `Rpc.Protocol codec` (`connect`, `connectProto`, `transcode`,
@@ -2076,7 +2080,10 @@ are wired, every message having both codecs (Binary is the Any's
 canonical form), and the builders became `init`, `initJson` and
 `initProto`. On 2026-11-12 the option became `wire=`, default `both`,
 and `codec=binary`'s diagnostic went with `codec=` (Wire chosen by the
-client, not by import).*
+client, not by import). On 2026-11-27 this entry was reversed in part:
+the option is `codec=` again and its binary value `binary`, the tag
+`Rpc.Binary` and the builder `initBinary` (Binary is the word for the
+binary format; The option is `codec=` again).*
 
 The generator's option value for the binary codecs alone is `proto`,
 the name of the tag its calls carry (`Rpc.Call Rpc.Proto`) and of the
@@ -2093,7 +2100,9 @@ names for now. Where: design §3.10, §6.
 
 ### Wire chosen by the client, not by import
 
-*2026-11-12.*
+*2026-11-12; on 2026-11-27 the option became `codec=` again, its binary
+value `binary` (The option is `codec=` again). The rest stands: one
+call value per method, the client fixing its codec.*
 
 A method keeps one generated call value, free in its codec under
 `wire=both`, and the client it is given to fixes the wire: an
@@ -2149,9 +2158,90 @@ cost the application a choice per method for no bytes, where one value
 costs nothing to choose. Where: design §3.10, §4; calling.md, "Choosing
 the codec".
 
+### Binary is the word for the binary format
+
+*2026-11-27.*
+
+The protobuf binary format went by four words in public and generated
+names: Binary (`Proto.Binary`, `Proto.Message.decodeBinary`,
+`Proto.Error.BadBinary`), Bytes (the generated `encodeNoteBytes`,
+`decodeNoteBytes`, `mergeNoteBytes`, `mergeNestedNoteBytes`), Proto (the
+tag `Proto.Codec.Proto` and its alias `Rpc.Proto`,
+`Proto.Method.initProto`, `Rpc.Protocol.connectProto`, the option value
+`wire=proto`) and Wire (the option `wire=` itself, beside
+`Proto.Error.InvalidWireType` and `Proto.Internal.Binary.Wire`). Binary
+is now the word in every identifier: `Proto.Codec.Binary` and
+`Rpc.Binary`, `initBinary`, `connectBinary`, `encodeNoteBinary` and the
+rest, and `codec=binary`.
+
+This reverses `codec=proto` (2026-10-27) in part. That entry took
+`proto` because it was the name of the tag the calls carry
+(`Rpc.Call Rpc.Proto`) and of the codec on Connect's wire
+(`application/proto`). The first reason is circular once the tag is
+renamed; the second is Connect's naming, which elm-connect keeps where
+it speaks Connect but need not take into its own identifiers. Against
+it: `Proto` is also the package's namespace, so `Proto.Codec.Proto`
+and `Rpc.Error.protoError` (an error of the `Proto` layer) used one word
+for two things, and a program over protobuf binary met four words for
+one format. "proto" stays where it is Connect's literal name for the
+codec: the content types (`application/proto`,
+`application/connect+proto`, `application/grpc-web+proto`), the
+`"proto"` that `Rpc.Protocol.codec` and `Rpc.Trace.codec` report and
+the `"codec"` key of their `toJson` renderings, whose docs now say it is
+Connect's name, and the Connect conformance suite's codec setting in the
+live suite. "Bytes" is kept for an elm/bytes value (`Rpc.responseBytes`,
+`Rpc.Body.bytes`, `Proto.Any.bytes`, `Proto.Bytes`, the scalar codecs
+`bytes` and `bytesAsBytes`, the `bytes=` option, and the limits
+`withReadMaxBytes` and `withWriteMaxBytes`, which count bytes). "Wire"
+is kept for the byte level of the binary format
+(`Proto.Internal.Binary.Wire`, `InvalidWireType`, the wire type), so the
+runtime's internal union for the JSON-or-binary choice,
+`Rpc.Internal.Protocol.Wire = Text TextWire | Binary BinaryWire`, is
+`Functions = Text TextFunctions | Bytes BytesFunctions`, after the body
+kinds `Rpc.Body` pairs publicly. "Codec" keeps its meaning, an encoder
+paired with its decoder, with the type parameter `codec` saying which;
+`Proto.Codec` and quickstart.md define it where a reader first meets it.
+
+`Rpc.Protocol.connectBinary` is the one name open to revisiting, since
+Connect itself calls this codec `proto`; it was taken so that no public
+name uses Proto for the format. The generated suffix `Binary` keeps
+`naming::codec_collision`, which now meets a type named `FooBinary`
+beside `Foo`; `FooBytes` beside `Foo` meets nothing (`codec_name_bytes`
+case). None of the old names shipped: 0.1.0 had no binary codecs, so
+there is no alias, and migrating.md lists the names a pre-release build
+of `main` used. Generated code changes in these names and the options
+header alone. Entries dated before this one keep the names they were
+written with. Where: design §3.7, §3.10, §5.1, §5.3; generator.md;
+calling.md.
+
+### The option is `codec=` again
+
+*2026-11-27.*
+
+The generator option `wire=both|json|proto` (Wire chosen by the client,
+not by import) is `codec=both|json|binary`, CLI `--codec`. Its value is
+the `codec` type parameter of the calls it generates,
+`Rpc.Call codec req res`: `json` gives `Rpc.Call Rpc.Json`, `binary`
+`Rpc.Call Rpc.Binary`, `both` a call free in it. So it takes the
+parameter's word, and "wire" is left to the byte level of the binary
+format (Binary is the word for the binary format). The 2026-11-12 entry
+moved off `codec=` because, once every message had both codecs, the
+name read as saying which codecs exist. That reading is answered where
+the option is described rather than by another word: its doc comment,
+the CLI's help, generator.md and design §3.10 say that it decides the
+codec each method's calls are typed at, and so which clients send them,
+and that every message has both codecs whatever it says. `wire=` never
+shipped, so, as with `codec=` then, it is refused rather than aliased,
+so that one spelling is written: `wire=` is an unknown option and
+`codec=proto` an unknown value, each with the standard diagnostic.
+Where: design §3.10, §6; generator.md; migrating.md.
+
 ### gRPC-Web as a protocol
 
-*2026-10-28.*
+*2026-10-28; `Protocol Proto` and `connectProto` below are
+`Protocol Binary` and `connectBinary`, and the `Binary` wire is the
+`Bytes` functions, since 2026-11-27 (Binary is the word for the binary
+format).*
 
 Unary gRPC-Web is `Rpc.Protocol.grpcWeb : Protocol Proto`, a protocol
 of its own beside `connect`, `connectProto` and `transcode`, rather than
@@ -2232,9 +2322,13 @@ referred to nothing above it. That last part is
 `Proto.Internal.Binary.Wire`, by the same rule and again without
 changing a definition. Its name is the wire level of the binary format,
 as Go's `protowire` is, and is qualified by `Binary` because `Wire`
-alone already means something else here: `Rpc.Internal.Protocol.Wire`
-and the generator's `wire=` are the choice between JSON and binary, and
-`Rpc.Internal.Wire` above was a third thing. Where: design §5.5.
+alone then meant something else here: `Rpc.Internal.Protocol.Wire`
+and the generator's `wire=` were the choice between JSON and binary, and
+`Rpc.Internal.Wire` above was a third thing. Since 2026-11-27 those two
+are `Rpc.Internal.Protocol.Functions` and `codec=`, so that "wire" in
+a name means the byte level of the binary format alone (Binary is the
+word for the binary format); the qualified name stays, the one the
+module already has. Where: design §5.5.
 
 ### Descriptors apart from the registry
 

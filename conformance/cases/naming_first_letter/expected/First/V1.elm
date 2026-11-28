@@ -143,14 +143,14 @@ defaultLink =
 -}
 messageURLPath : Proto.Message.Message URLPath
 messageURLPath =
-    Proto.Message.init "first.v1.URLPath" encodeURLPath decodeURLPath encodeURLPathBytes decodeURLPathBytes
+    Proto.Message.init "first.v1.URLPath" encodeURLPath decodeURLPath encodeURLPathBinary decodeURLPathBinary
 
 
 {-| The typed value of [`Link`](#Link): its full name and codecs.
 -}
 messageLink : Proto.Message.Message Link
 messageLink =
-    Proto.Message.init "first.v1.Link" encodeLink decodeLink encodeLinkBytes decodeLinkBytes
+    Proto.Message.init "first.v1.Link" encodeLink decodeLink encodeLinkBinary decodeLinkBinary
 
 
 
@@ -293,8 +293,8 @@ decodeLinkTarget =
 
 {-| Encodes a [`URLPath`](#URLPath) as protobuf binary.
 -}
-encodeURLPathBytes : URLPath -> Bytes.Encode.Encoder
-encodeURLPathBytes value =
+encodeURLPathBinary : URLPath -> Bytes.Encode.Encoder
+encodeURLPathBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.label
         , Proto.Binary.implicit Proto.Binary.string 2 value.id
@@ -315,18 +315,18 @@ encodeURLPathBytes value =
 
 {-| Encodes a [`Link`](#Link) as protobuf binary.
 -}
-encodeLinkBytes : Link -> Bytes.Encode.Encoder
-encodeLinkBytes value =
+encodeLinkBinary : Link -> Bytes.Encode.Encoder
+encodeLinkBinary value =
     Bytes.Encode.sequence
-        [ encodeLinkTargetBytes value.target
+        [ encodeLinkTargetBinary value.target
         , Proto.Binary.implicit Proto.Binary.string 9 value.label
         ]
 
 
 {-| Encodes a [`LinkTarget`](#LinkTarget) as protobuf binary: its set member's field.
 -}
-encodeLinkTargetBytes : LinkTarget -> Bytes.Encode.Encoder
-encodeLinkTargetBytes value =
+encodeLinkTargetBinary : LinkTarget -> Bytes.Encode.Encoder
+encodeLinkTargetBinary value =
     case value of
         LinkTargetUnset ->
             Bytes.Encode.sequence []
@@ -344,8 +344,8 @@ encodeLinkTargetBytes value =
 
 {-| Decodes a [`URLPath`](#URLPath) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeURLPathBytes : URLPath -> Proto.Binary.Decoder URLPath
-mergeURLPathBytes =
+mergeURLPathBinary : URLPath -> Proto.Binary.Decoder URLPath
+mergeURLPathBinary =
     Proto.Binary.merge
         "first.v1.URLPath"
         (\number wire value ->
@@ -700,15 +700,15 @@ mergeURLPathBytes =
 
 {-| Decodes a [`URLPath`](#URLPath) from protobuf binary.
 -}
-decodeURLPathBytes : Proto.Binary.Decoder URLPath
-decodeURLPathBytes =
-    mergeURLPathBytes defaultURLPath
+decodeURLPathBinary : Proto.Binary.Decoder URLPath
+decodeURLPathBinary =
+    mergeURLPathBinary defaultURLPath
 
 
 {-| Decodes a [`Link`](#Link) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeLinkBytes : Link -> Proto.Binary.Decoder Link
-mergeLinkBytes =
+mergeLinkBinary : Link -> Proto.Binary.Decoder Link
+mergeLinkBinary =
     Proto.Binary.merge
         "first.v1.Link"
         (\number wire value ->
@@ -754,6 +754,6 @@ mergeLinkBytes =
 
 {-| Decodes a [`Link`](#Link) from protobuf binary.
 -}
-decodeLinkBytes : Proto.Binary.Decoder Link
-decodeLinkBytes =
-    mergeLinkBytes defaultLink
+decodeLinkBinary : Proto.Binary.Decoder Link
+decodeLinkBinary =
+    mergeLinkBinary defaultLink

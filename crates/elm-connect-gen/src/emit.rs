@@ -164,11 +164,11 @@
 //!   through `Json.Decode.lazy` too (design §3.2).
 //! - Each message, enum, oneof and recursion wrapper also gets protobuf
 //!   binary codecs, in two sections after the decoders ([`binary`]),
-//!   whatever the `wire` option, which decides only which halves the
-//!   methods carry: `Proto.Method.initJson` (JSON), `initProto` (binary;
+//!   whatever the `codec` option, which decides only which halves the
+//!   methods carry: `Proto.Method.initJson` (JSON), `initBinary` (binary;
 //!   no routes, which take JSON) or `init` (both). A call's type carries
-//!   its codec: `Rpc.Call Rpc.Json`, `Rpc.Call Rpc.Proto`, or free in it
-//!   under `wire=both`.
+//!   its codec: `Rpc.Call Rpc.Json`, `Rpc.Call Rpc.Binary`, or free in it
+//!   under `codec=both`.
 //! - An `Any` holds its message's binary, and its proto3
 //!   JSON goes through a registry ([`crate::ir::AnyReach`]): each message,
 //!   oneof and wrapper that reaches one has a JSON decoder taking it,
@@ -220,7 +220,7 @@ use crate::ir::{
     OneofVariant, Package, Service, TypeName,
 };
 use crate::naming::VERSION_VALUE;
-use crate::options::{EnumUnknown, Options, UnknownFields, Wire};
+use crate::options::{Codec, EnumUnknown, Options, UnknownFields};
 use crate::{DEFAULT_OPTIONS, HEADER_PREFIX, OPTIONS_PREFIX, SENTINEL, VERSION};
 
 use self::field::{FieldShape, ValueShape};
@@ -346,12 +346,12 @@ pub fn emit_with_queries(
     emitter.write_reach = AnyReach::refusable(packages.iter().chain(std::iter::once(package)));
     let mut decls = emitter.package(package);
     let mut encoders = Vec::new();
-    // Route functions take JSON, which `wire=proto` does not generate,
+    // Route functions take JSON, which `codec=binary` does not generate,
     // so it generates no routes, and no query encoders for them.
     for message in package
         .messages
         .iter()
-        .filter(|_| options.wire != Wire::Proto)
+        .filter(|_| options.codec != Codec::Binary)
     {
         if let Some(params) = queries.get(&message.proto_full_name)
             && let Some(decl) = emitter.query_encoder(&messages, message, params)
@@ -651,9 +651,9 @@ struct Emitter {
     enum_unknown: EnumUnknown,
     /// Whether messages keep the unknown fields binary carries.
     unknown_fields: UnknownFields,
-    /// Which codecs the option wires into methods; package modules emit
-    /// both whatever it says.
-    wiring: Wire,
+    /// The codec the `codec` option types methods' calls at, and so which
+    /// codecs they carry; package modules emit both whatever it says.
+    codec: Codec,
     /// The messages of the build that reach a `google.protobuf.Any`, whose
     /// JSON decoders take the registry.
     reach: AnyReach,
@@ -702,7 +702,7 @@ impl Emitter {
             holding: Holding::of(options),
             enum_unknown: options.enum_unknown,
             unknown_fields: options.unknown_fields,
-            wiring: options.wire,
+            codec: options.codec,
             reach: AnyReach::default(),
             counted: Counted::default(),
             write_reach: AnyReach::default(),
@@ -784,8 +784,8 @@ impl Emitter {
             values.push(self.enum_record(&package.module, enumeration));
             encoders.push(self.enum_encoder(enumeration));
             decoders.push(self.enum_decoder(enumeration));
-            binary_encoders.push(self.enum_encoder_bytes(enumeration));
-            binary_decoders.push(self.enum_decoder_bytes(enumeration));
+            binary_encoders.push(self.enum_encoder_binary(enumeration));
+            binary_decoders.push(self.enum_decoder_binary(enumeration));
         }
         for shape in &messages {
             types.push(self.message_alias(&package.module, shape));
@@ -793,22 +793,22 @@ impl Emitter {
             values.push(self.message_record(&package.module, shape));
             encoders.extend(self.message_encoder(shape));
             decoders.extend(self.message_decoder(shape));
-            binary_encoders.push(self.message_encoder_bytes(shape));
-            binary_decoders.extend(self.message_merge_bytes(shape));
-            binary_decoders.push(self.message_decoder_bytes(shape));
+            binary_encoders.push(self.message_encoder_binary(shape));
+            binary_decoders.extend(self.message_merge_binary(shape));
+            binary_decoders.push(self.message_decoder_binary(shape));
             if let Some(wrapper) = &shape.message.wrapper {
                 types.push(self.wrapper_type(shape.message, wrapper));
                 encoders.push(self.wrapper_encoder(shape.message, wrapper));
                 decoders.push(self.wrapper_decoder(shape.message, wrapper));
-                binary_encoders.push(self.wrapper_encoder_bytes(shape.message, wrapper));
-                binary_decoders.extend(self.wrapper_decoder_bytes(shape.message, wrapper));
+                binary_encoders.push(self.wrapper_encoder_binary(shape.message, wrapper));
+                binary_decoders.extend(self.wrapper_decoder_binary(shape.message, wrapper));
             }
             let counts = self.counts(shape.message);
             for oneof in &shape.oneofs {
                 types.push(self.oneof_type(&package.module, shape.message, oneof));
                 encoders.push(self.oneof_encoder(oneof, counts));
                 decoders.extend(self.oneof_decoder(oneof, counts));
-                binary_encoders.push(self.oneof_encoder_bytes(oneof));
+                binary_encoders.push(self.oneof_encoder_binary(oneof));
             }
         }
         // A package of enums alone has no defaults.
@@ -1218,7 +1218,7 @@ mod tests {
         );
         assert!(
             on.contains(
-                "messageA =\n    Proto.Message.init \"t.v1.A\" encodeA decodeA encodeABytes decodeABytes"
+                "messageA =\n    Proto.Message.init \"t.v1.A\" encodeA decodeA encodeABinary decodeABinary"
             ),
             "{on}"
         );
@@ -1427,7 +1427,7 @@ mod tests {
         };
         let options = Options {
             int64: Int64::Int,
-            wire: Wire::Json,
+            codec: Codec::Json,
             ..Options::default()
         };
         let module = emit_service(

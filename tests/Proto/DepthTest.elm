@@ -88,21 +88,21 @@ ok =
 shapes : List Shape
 shapes =
     [ { name = "a message that holds itself"
-      , binary = Proto.Binary.decode Deep.decodeChainBytes >> ok
+      , binary = Proto.Binary.decode Deep.decodeChainBinary >> ok
       , json = Json.Decode.decodeString Deep.decodeChain >> ok
       , prefix = \_ size -> 0x12 :: varint size
       , open = \_ -> "{\"next\":"
       , close = \_ -> "}"
       }
     , { name = "through a list"
-      , binary = Proto.Binary.decode Deep.decodeTreeBytes >> ok
+      , binary = Proto.Binary.decode Deep.decodeTreeBinary >> ok
       , json = Json.Decode.decodeString Deep.decodeTree >> ok
       , prefix = \_ size -> 0x12 :: varint size
       , open = \_ -> "{\"children\":["
       , close = \_ -> "]}"
       }
     , { name = "through a map's values"
-      , binary = Proto.Binary.decode Deep.decodeDirBytes >> ok
+      , binary = Proto.Binary.decode Deep.decodeDirBinary >> ok
       , json = Json.Decode.decodeString Deep.decodeDir >> ok
       , prefix =
             \_ size ->
@@ -115,14 +115,14 @@ shapes =
       , close = \_ -> "}}"
       }
     , { name = "through a oneof member"
-      , binary = Proto.Binary.decode Deep.decodeExprBytes >> ok
+      , binary = Proto.Binary.decode Deep.decodeExprBinary >> ok
       , json = Json.Decode.decodeString Deep.decodeExpr >> ok
       , prefix = \_ size -> 0x12 :: varint size
       , open = \_ -> "{\"negated\":"
       , close = \_ -> "}"
       }
     , { name = "two messages that hold each other"
-      , binary = Proto.Binary.decode Deep.decodePersonBytes >> ok
+      , binary = Proto.Binary.decode Deep.decodePersonBinary >> ok
       , json = Json.Decode.decodeString Deep.decodePerson >> ok
       , prefix =
             \depth size ->
@@ -147,7 +147,7 @@ shapes =
                     "]}"
       }
     , { name = "three messages"
-      , binary = Proto.Binary.decode Deep.decodeFirstBytes >> ok
+      , binary = Proto.Binary.decode Deep.decodeFirstBinary >> ok
       , json = Json.Decode.decodeString Deep.decodeFirst >> ok
       , prefix = \_ size -> 0x0A :: varint size
       , open =
@@ -170,14 +170,14 @@ shapes =
                     "}"
       }
     , { name = "wider than a record literal"
-      , binary = Proto.Binary.decode Deep.decodeWideBytes >> ok
+      , binary = Proto.Binary.decode Deep.decodeWideBinary >> ok
       , json = Json.Decode.decodeString Deep.decodeWide >> ok
       , prefix = \_ size -> 0x8A :: 0x04 :: varint size
       , open = \_ -> "{\"children\":["
       , close = \_ -> "]}"
       }
     , { name = "holding an Any"
-      , binary = Proto.Binary.decode Deep.decodeEnvelopeBytes >> ok
+      , binary = Proto.Binary.decode Deep.decodeEnvelopeBinary >> ok
       , json = Json.Decode.decodeString (Deep.decodeEnvelopeWith Proto.WellKnown.registry) >> ok
       , prefix = \_ size -> 0x12 :: varint size
       , open = \_ -> "{\"replies\":["
@@ -326,7 +326,7 @@ binaryFailure =
                     offset =
                         List.sum (List.map List.length (List.take 99 prefixes)) + 1
                 in
-                Proto.Binary.decode Deep.decodeChainBytes input
+                Proto.Binary.decode Deep.decodeChainBinary input
                     |> Result.map (\_ -> ())
                     |> Expect.equal
                         (Err
@@ -340,7 +340,7 @@ binaryFailure =
             \_ ->
                 case List.filter (\shape -> shape.name == "two messages that hold each other") shapes of
                     people :: _ ->
-                        case Proto.Binary.decode Deep.decodePersonBytes (binaryOf people 101) of
+                        case Proto.Binary.decode Deep.decodePersonBinary (binaryOf people 101) of
                             Err e ->
                                 ( List.length e.path, List.take 2 e.path )
                                     |> Expect.equal ( 100, [ ( "cycles.v1.Person", 2 ), ( "cycles.v1.Team", 1 ) ] )
@@ -375,11 +375,11 @@ mergedInto : Test
 mergedInto =
     test "reading into a value read before counts the input's levels" <|
         \_ ->
-            case Proto.Binary.decode Deep.decodeChainBytes (binaryOf chainShape 100) of
+            case Proto.Binary.decode Deep.decodeChainBinary (binaryOf chainShape 100) of
                 Ok existing ->
                     Expect.all
-                        [ \_ -> Proto.Binary.decode (Deep.mergeChainBytes existing) (binaryOf chainShape 100) |> ok |> Expect.equal (Ok ())
-                        , \_ -> Proto.Binary.decode (Deep.mergeChainBytes existing) (binaryOf chainShape 101) |> Result.mapError .reason |> ok |> Expect.equal (Err Proto.Error.TooDeep)
+                        [ \_ -> Proto.Binary.decode (Deep.mergeChainBinary existing) (binaryOf chainShape 100) |> ok |> Expect.equal (Ok ())
+                        , \_ -> Proto.Binary.decode (Deep.mergeChainBinary existing) (binaryOf chainShape 101) |> Result.mapError .reason |> ok |> Expect.equal (Err Proto.Error.TooDeep)
                         ]
                         ()
 
@@ -429,12 +429,12 @@ keep =
         \_ ->
             Expect.all
                 [ \_ ->
-                    Proto.Binary.decode Keep.decodeChainBytes (withUnknown 100)
-                        |> Result.map (Proto.Binary.encode Keep.encodeChainBytes >> Proto.Bytes.toBase64)
+                    Proto.Binary.decode Keep.decodeChainBinary (withUnknown 100)
+                        |> Result.map (Proto.Binary.encode Keep.encodeChainBinary >> Proto.Bytes.toBase64)
                         |> Expect.equal (Ok (Proto.Bytes.toBase64 (withUnknown 100)))
-                , \_ -> Proto.Binary.decode Keep.decodeChainBytes (withUnknown 101) |> Result.mapError .reason |> ok |> Expect.equal (Err Proto.Error.TooDeep)
-                , \_ -> Proto.Binary.decode Keep.decodeChainBytes (binaryOf chainShape 101) |> ok |> Expect.equal (Proto.Binary.decode Deep.decodeChainBytes (binaryOf chainShape 101) |> ok)
-                , \_ -> Proto.Binary.decode Keep.decodeTreeBytes (binaryOf treeShape 101) |> Result.mapError .reason |> ok |> Expect.equal (Err Proto.Error.TooDeep)
+                , \_ -> Proto.Binary.decode Keep.decodeChainBinary (withUnknown 101) |> Result.mapError .reason |> ok |> Expect.equal (Err Proto.Error.TooDeep)
+                , \_ -> Proto.Binary.decode Keep.decodeChainBinary (binaryOf chainShape 101) |> ok |> Expect.equal (Proto.Binary.decode Deep.decodeChainBinary (binaryOf chainShape 101) |> ok)
+                , \_ -> Proto.Binary.decode Keep.decodeTreeBinary (binaryOf treeShape 101) |> Result.mapError .reason |> ok |> Expect.equal (Err Proto.Error.TooDeep)
                 , \_ -> Json.Decode.decodeString Keep.decodeTree (jsonOf treeShape 101) |> ok |> failsTooDeep
                 ]
                 ()
@@ -456,14 +456,14 @@ farPast =
             Json.Decode.decodeString Json.Decode.value text
 
         method =
-            Proto.Method.init "cycles.v1.Trees" "Get" Deep.encodeTree (\_ -> Deep.decodeTree) Deep.encodeTreeBytes Deep.decodeTreeBytes
+            Proto.Method.init "cycles.v1.Trees" "Get" Deep.encodeTree (\_ -> Deep.decodeTree) Deep.encodeTreeBinary Deep.decodeTreeBinary
 
         answer =
             Http.GoodStatus_ { url = "https://api.example.com/cycles.v1.Trees/Get", statusCode = 200, statusText = "OK", headers = Dict.fromList [ ( "content-type", "application/json" ) ] } text
     in
     describe "10,000 levels"
         [ test "Proto.Binary.decode" <|
-            \_ -> Proto.Binary.decode Deep.decodeTreeBytes (binaryOf treeShape levels) |> Result.mapError .reason |> ok |> Expect.equal (Err Proto.Error.TooDeep)
+            \_ -> Proto.Binary.decode Deep.decodeTreeBinary (binaryOf treeShape levels) |> Result.mapError .reason |> ok |> Expect.equal (Err Proto.Error.TooDeep)
         , test "Json.Decode.decodeString" <|
             \_ -> Json.Decode.decodeString Deep.decodeTree text |> ok |> failsTooDeep
         , test "Json.Decode.decodeValue and Proto.Message.decodeJson" <|
@@ -714,7 +714,7 @@ anyTooDeep =
 
 readEnvelopeBytes : Bytes.Bytes -> Result Proto.Error.Binary ()
 readEnvelopeBytes =
-    Proto.Binary.decode Deep.decodeEnvelopeBytes >> ok
+    Proto.Binary.decode Deep.decodeEnvelopeBinary >> ok
 
 
 tooDeepBinary : Result Proto.Error.Binary () -> Result Proto.Error.Reason ()
@@ -797,10 +797,10 @@ oneBudget =
                                                 |> Maybe.andThen (Json.Decode.decodeValue (Deep.decodeEnvelopeWith Deep.registry) >> Result.toMaybe)
                                                 |> Expect.equal (Just envelope)
                                         , \_ ->
-                                            Proto.Binary.decode Deep.decodeEnvelopeBytes (Proto.Binary.encode Deep.encodeEnvelopeBytes envelope)
+                                            Proto.Binary.decode Deep.decodeEnvelopeBinary (Proto.Binary.encode Deep.encodeEnvelopeBinary envelope)
                                                 |> Expect.equal (Ok envelope)
                                         , \_ ->
-                                            Proto.Binary.decode Deep.decodeEnvelopeBytes (Proto.Binary.encode Deep.encodeEnvelopeBytes envelope)
+                                            Proto.Binary.decode Deep.decodeEnvelopeBinary (Proto.Binary.encode Deep.encodeEnvelopeBinary envelope)
                                                 |> Result.toMaybe
                                                 |> Maybe.andThen (Deep.encodeEnvelope >> Proto.Json.encodeWith Deep.registry >> Result.toMaybe)
                                                 |> Maybe.andThen (Json.Decode.decodeValue (Deep.decodeEnvelopeWith Deep.registry) >> Result.toMaybe)
@@ -983,7 +983,7 @@ offCycle =
             [ ( "a field", "sealed", 0x4A ), ( "a oneof's member", "note", 0x52 ) ]
 
         method =
-            Proto.Method.init "cycles.v1.Envelopes" "Get" Deep.encodeEnvelope Deep.decodeEnvelopeWith Deep.encodeEnvelopeBytes Deep.decodeEnvelopeBytes
+            Proto.Method.init "cycles.v1.Envelopes" "Get" Deep.encodeEnvelope Deep.decodeEnvelopeWith Deep.encodeEnvelopeBinary Deep.decodeEnvelopeBinary
 
         answer text =
             Http.GoodStatus_ { url = "https://api.example.com/cycles.v1.Envelopes/Get", statusCode = 200, statusText = "OK", headers = Dict.fromList [ ( "content-type", "application/json" ) ] } text
@@ -1224,44 +1224,44 @@ everyNestingMessage =
     describe "every message that nests counts, from the outermost"
         [ boundaries "a message of another cycle, held directly"
             Deep.decodeChain
-            Deep.decodeChainBytes
+            Deep.decodeChainBinary
             (\( chains, trees ) -> chainThenTrees chains trees)
             [ ( ( 99, 1 ), ( 99, 2 ) ), ( ( 1, 99 ), ( 1, 100 ) ), ( ( 50, 50 ), ( 50, 51 ) ) ]
         , boundaries "a message on no cycle, held in a field, holding another cycle in a list"
             Deep.decodeDir
-            Deep.decodeDirBytes
+            Deep.decodeDirBinary
             (\( dirs, trees ) -> forestTrees dirs trees)
             [ ( ( 98, 1 ), ( 99, 1 ) ), ( ( 1, 98 ), ( 1, 99 ) ), ( ( 50, 49 ), ( 50, 50 ) ) ]
         , boundaries "three cycles, a message on none between the first two"
             Deep.decodeDir
-            Deep.decodeDirBytes
+            Deep.decodeDirBinary
             (\( dirs, ( chains, trees ) ) -> threeCycles dirs chains trees)
             [ ( ( 33, ( 33, 33 ) ), ( 33, ( 33, 34 ) ) ), ( ( 1, ( 1, 97 ) ), ( 1, ( 1, 98 ) ) ), ( ( 97, ( 1, 1 ) ), ( 98, ( 1, 1 ) ) ) ]
         , boundaries "the same message on no cycle read at the top is the first level"
             Deep.decodeForest
-            Deep.decodeForestBytes
+            Deep.decodeForestBinary
             (\( chains, trees ) -> forestChain :: chainThenTrees chains trees)
             [ ( ( 98, 1 ), ( 98, 2 ) ), ( ( 1, 98 ), ( 1, 99 ) ) ]
         , boundaries "a message on no cycle above one"
             Deep.decodeDoc
-            Deep.decodeDocBytes
+            Deep.decodeDocBinary
             (\chains -> docRoot :: run chains chainNext)
             [ ( 99, 100 ) ]
         , boundaries "two messages on no cycle above one"
             Deep.decodeLibrary
-            Deep.decodeLibraryBytes
+            Deep.decodeLibraryBinary
             (\chains -> libraryDoc :: docRoot :: run chains chainNext)
             [ ( 98, 99 ) ]
         , boundaries "a message on no cycle above one holding a Struct"
             Deep.decodeCard
-            Deep.decodeCardBytes
+            Deep.decodeCardBinary
             (\objects -> cardMeta :: metaData :: run objects structObject)
             [ ( 98, 99 ) ]
         , describe "100,000 levels fail with the error and throw nothing"
-            [ far "another cycle" Deep.decodeChain Deep.decodeChainBytes (chainThenTrees 50000 50000)
-            , far "three cycles and a message on none" Deep.decodeDir Deep.decodeDirBytes (threeCycles 30000 30000 40000)
-            , far "two messages on no cycle above one" Deep.decodeLibrary Deep.decodeLibraryBytes (libraryDoc :: docRoot :: run 100000 chainNext)
-            , far "a Struct below two messages on no cycle" Deep.decodeCard Deep.decodeCardBytes (cardMeta :: metaData :: run 100000 structObject)
+            [ far "another cycle" Deep.decodeChain Deep.decodeChainBinary (chainThenTrees 50000 50000)
+            , far "three cycles and a message on none" Deep.decodeDir Deep.decodeDirBinary (threeCycles 30000 30000 40000)
+            , far "two messages on no cycle above one" Deep.decodeLibrary Deep.decodeLibraryBinary (libraryDoc :: docRoot :: run 100000 chainNext)
+            , far "a Struct below two messages on no cycle" Deep.decodeCard Deep.decodeCardBinary (cardMeta :: metaData :: run 100000 structObject)
             ]
         , letter
         ]
@@ -1300,7 +1300,7 @@ letter =
             Json.Decode.decodeString (Deep.decodeLetterWith Deep.registry) >> ok
 
         written bytes =
-            case Proto.Binary.decode Deep.decodeLetterBytes bytes of
+            case Proto.Binary.decode Deep.decodeLetterBinary bytes of
                 Ok value ->
                     Proto.Json.encodeWith Deep.registry (Deep.encodeLetter value) |> ok
 
@@ -1474,7 +1474,7 @@ mixedFarPast =
             ]
 
         method =
-            Proto.Method.init "cycles.v1.Envelopes" "Get" Deep.encodeEnvelope Deep.decodeEnvelopeWith Deep.encodeEnvelopeBytes Deep.decodeEnvelopeBytes
+            Proto.Method.init "cycles.v1.Envelopes" "Get" Deep.encodeEnvelope Deep.decodeEnvelopeWith Deep.encodeEnvelopeBinary Deep.decodeEnvelopeBinary
 
         answer contentType body =
             { url = "https://api.example.com/cycles.v1.Envelopes/Get", statusCode = 200, statusText = "OK", headers = Dict.fromList [ ( "content-type", contentType ) ] }
@@ -1534,7 +1534,7 @@ mixedFarPast =
                                         ( metadata, _ ) =
                                             answer "application/proto" ""
                                     in
-                                    case Rpc.responseBytes (Rpc.client Rpc.Protocol.connectProto "https://api.example.com") (Rpc.call method Deep.defaultEnvelope) (Http.GoodStatus_ metadata bytes) of
+                                    case Rpc.responseBytes (Rpc.client Rpc.Protocol.connectBinary "https://api.example.com") (Rpc.call method Deep.defaultEnvelope) (Http.GoodStatus_ metadata bytes) of
                                         Err error ->
                                             case Rpc.Error.protoError error of
                                                 Just (Proto.Error.BadBinary problem) ->
@@ -1584,7 +1584,7 @@ mixedFarPast =
 
 readEnvelopeBytesValue : Bytes.Bytes -> Result Proto.Error.Binary Deep.Envelope
 readEnvelopeBytesValue =
-    Proto.Binary.decode Deep.decodeEnvelopeBytes
+    Proto.Binary.decode Deep.decodeEnvelopeBinary
 
 
 {-| An error we return holds no JSON nested past 50 levels, so it prints
@@ -1632,7 +1632,7 @@ scrubbed =
                         "{\"code\":\"internal\",\"message\":\"x\",\"details\":[{\"type\":" ++ deep ++ "}]}"
 
                     method =
-                        Proto.Method.init "cycles.v1.Trees" "Get" Deep.encodeTree (\_ -> Deep.decodeTree) Deep.encodeTreeBytes Deep.decodeTreeBytes
+                        Proto.Method.init "cycles.v1.Trees" "Get" Deep.encodeTree (\_ -> Deep.decodeTree) Deep.encodeTreeBinary Deep.decodeTreeBinary
 
                     answer =
                         Http.BadStatus_ { url = "https://api.example.com/cycles.v1.Trees/Get", statusCode = 500, statusText = "Internal Server Error", headers = Dict.fromList [ ( "content-type", "application/json" ) ] } body
@@ -1826,7 +1826,7 @@ valueErrorsShort =
             Json.Decode.decodeString Json.Decode.value text |> Result.withDefault Json.Encode.null
 
         method =
-            Proto.Method.init "cycles.v1.Envelopes" "Get" Deep.encodeEnvelope Deep.decodeEnvelopeWith Deep.encodeEnvelopeBytes Deep.decodeEnvelopeBytes
+            Proto.Method.init "cycles.v1.Envelopes" "Get" Deep.encodeEnvelope Deep.decodeEnvelopeWith Deep.encodeEnvelopeBinary Deep.decodeEnvelopeBinary
 
         answered text =
             Http.GoodStatus_ { url = "https://api.example.com/cycles.v1.Envelopes/Get", statusCode = 200, statusText = "OK", headers = Dict.fromList [ ( "content-type", "application/json" ) ] } text

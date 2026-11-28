@@ -100,7 +100,7 @@ point of `elm-format`: the corpus's formatted check and
   error type, and
   `Proto.Version`, the compatibility sentinel every generated module
   names (§8.2), and `Proto.Codec`, the codec tags `Rpc.Json` and
-  `Rpc.Proto` alias (§3.1, rule 5).
+  `Rpc.Binary` alias (§3.1, rule 5).
 - `Rpc.*` is the calling: `Rpc` builds requests, sends them and reads
   answers, beside a module per type it takes or gives (`Rpc.Call`,
   `Rpc.Client`, `Rpc.Protocol`, `Rpc.Retry`, `Rpc.Trace`, `Rpc.Body`, `Rpc.Request`,
@@ -188,7 +188,7 @@ Each layer proves one thing and has a known gap. A path that starts with
   unary JSON cases over HTTP/1.1, through the pure halves and through
   `Rpc.sendTraced`, and its unary proto-codec cases
   (`conformance-proto.yaml`, `just live-proto`) on the same runner, whose
-  bindings the default `wire=both` gives both codecs. Gap: what the
+  bindings the default `codec=both` gives both codecs. Gap: what the
   runtime does not support (streaming, HTTP/2) is declared out,
   `known-failing-send.txt` lists the one case `sendTraced` fails, and
   `known-failing-proto.txt` the four error-body cases the proto run adds,
@@ -196,7 +196,7 @@ Each layer proves one thing and has a known gap. A path that starts with
 - **The protobuf conformance suite** (`conformance/protobuf/`, `just
   protobuf-conformance`, opt-in): protobuf's `conformance_test_runner`
   against the protobuf binary and proto3 JSON codecs, through the Elm
-  generated for its test messages under `wire=both`, every way between
+  generated for its test messages under `codec=both`, every way between
   the two formats. Gap: proto3 only; the cases it fails are classified
   in `failure_list.txt`.
 - **Lockstep** (`crates/elm-connect-gen/tests/lockstep.rs`): the

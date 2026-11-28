@@ -16,7 +16,7 @@
 
 use std::collections::BTreeSet;
 
-use super::binary::bytes_name;
+use super::binary::binary_name;
 use super::{
     Emitter, MessageShape, PROTO_DESCRIPTORS, PROTO_ENUM, PROTO_ENUM_VALUE, PROTO_FIELD,
     PROTO_MESSAGE, PROTO_REGISTRY, PROTO_WELL_KNOWN, RecordField, docs,
@@ -108,8 +108,8 @@ impl Emitter {
         let codecs = [
             var(encoder),
             var(decoder),
-            var(bytes_name(message.encoder_name())),
-            var(bytes_name(message.decoder_name())),
+            var(binary_name(message.encoder_name())),
+            var(binary_name(message.decoder_name())),
         ];
         let annotation =
             self.library_type(PROTO_MESSAGE, "Message", [ty(message.elm_name.clone(), [])]);

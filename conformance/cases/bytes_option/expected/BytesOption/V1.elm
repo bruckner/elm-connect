@@ -100,7 +100,7 @@ defaultBlob =
 -}
 messageBlob : Proto.Message.Message Blob
 messageBlob =
-    Proto.Message.init "bytes_option.v1.Blob" encodeBlob decodeBlob encodeBlobBytes decodeBlobBytes
+    Proto.Message.init "bytes_option.v1.Blob" encodeBlob decodeBlob encodeBlobBinary decodeBlobBinary
 
 
 
@@ -206,8 +206,8 @@ decodeBlobSource =
 
 {-| Encodes a [`Blob`](#Blob) as protobuf binary.
 -}
-encodeBlobBytes : Blob -> Bytes.Encode.Encoder
-encodeBlobBytes value =
+encodeBlobBinary : Blob -> Bytes.Encode.Encoder
+encodeBlobBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.bytesAsBytes 1 value.data
         , Proto.Binary.optional Proto.Binary.bytesAsBytes 2 value.maybeData
@@ -215,15 +215,15 @@ encodeBlobBytes value =
         , Proto.Binary.dict Proto.Binary.string Proto.Binary.bytesAsBytes 4 value.byName
         , Proto.Binary.optional Proto.Binary.bytesValueAsBytes 5 value.wrapped
         , Proto.Binary.list Proto.Binary.bytesValueAsBytes 6 value.wrappedChunks
-        , encodeBlobSourceBytes value.source
+        , encodeBlobSourceBinary value.source
         , Proto.Binary.implicit Proto.Binary.string 9 value.name
         ]
 
 
 {-| Encodes a [`BlobSource`](#BlobSource) as protobuf binary: its set member's field.
 -}
-encodeBlobSourceBytes : BlobSource -> Bytes.Encode.Encoder
-encodeBlobSourceBytes value =
+encodeBlobSourceBinary : BlobSource -> Bytes.Encode.Encoder
+encodeBlobSourceBinary value =
     case value of
         BlobSourceUnset ->
             Bytes.Encode.sequence []
@@ -241,8 +241,8 @@ encodeBlobSourceBytes value =
 
 {-| Decodes a [`Blob`](#Blob) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeBlobBytes : Blob -> Proto.Binary.Decoder Blob
-mergeBlobBytes =
+mergeBlobBinary : Blob -> Proto.Binary.Decoder Blob
+mergeBlobBinary =
     Proto.Binary.merge
         "bytes_option.v1.Blob"
         (\number wire value ->
@@ -421,6 +421,6 @@ mergeBlobBytes =
 
 {-| Decodes a [`Blob`](#Blob) from protobuf binary.
 -}
-decodeBlobBytes : Proto.Binary.Decoder Blob
-decodeBlobBytes =
-    mergeBlobBytes defaultBlob
+decodeBlobBinary : Proto.Binary.Decoder Blob
+decodeBlobBinary =
+    mergeBlobBinary defaultBlob

@@ -58,8 +58,8 @@ getNote =
             "GetNote"
             Notes.V1.encodeGetNoteRequest
             (\_ -> Notes.V1.decodeNote)
-            Notes.V1.encodeGetNoteRequestBytes
-            Notes.V1.decodeNoteBytes
+            Notes.V1.encodeGetNoteRequestBinary
+            Notes.V1.decodeNoteBinary
             |> Proto.Method.withRoutes [ routeGetNote0, routeGetNote1 ]
         )
 
@@ -80,8 +80,8 @@ listNotes =
             "ListNotes"
             Notes.V1.encodeListNotesRequest
             (\_ -> Notes.V1.decodeListNotesResponse)
-            Notes.V1.encodeListNotesRequestBytes
-            Notes.V1.decodeListNotesResponseBytes
+            Notes.V1.encodeListNotesRequestBinary
+            Notes.V1.decodeListNotesResponseBinary
             |> Proto.Method.withRoutes [ routeListNotes0 ]
             |> Proto.Method.withResponseBody 0 "notes"
         )
@@ -103,8 +103,8 @@ createNote =
             "CreateNote"
             Notes.V1.encodeCreateNoteRequest
             (\_ -> Notes.V1.decodeNote)
-            Notes.V1.encodeCreateNoteRequestBytes
-            Notes.V1.decodeNoteBytes
+            Notes.V1.encodeCreateNoteRequestBinary
+            Notes.V1.decodeNoteBinary
             |> Proto.Method.withJsonRoutes [ routeCreateNote0 ]
         )
 
@@ -127,8 +127,8 @@ replaceNote =
             "ReplaceNote"
             Notes.V1.encodeNote
             (\_ -> Notes.V1.decodeNote)
-            Notes.V1.encodeNoteBytes
-            Notes.V1.decodeNoteBytes
+            Notes.V1.encodeNoteBinary
+            Notes.V1.decodeNoteBinary
             |> Proto.Method.withJsonRoutes [ routeReplaceNote0 ]
         )
 

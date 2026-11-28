@@ -1,5 +1,5 @@
 module Rpc exposing
-    ( Json, Proto
+    ( Json, Binary
     , Call, call
     , Client, client
     , task, send, cancel
@@ -15,7 +15,7 @@ HTTP transcoding, the REST mapping `google.api.http` rules describe, as
 grpc-gateway, Envoy's gRPC-JSON transcoder and Vanguard serve it, or over
 gRPC-Web ([`Rpc.Protocol.grpcWeb`](Rpc-Protocol#grpcWeb)). Messages travel
 as proto3 JSON, or over Connect and gRPC-Web as protobuf binary
-([`Rpc.Protocol.connectProto`](Rpc-Protocol#connectProto)).
+([`Rpc.Protocol.connectBinary`](Rpc-Protocol#connectBinary)).
 
     client : Rpc.Client Rpc.Json
     client =
@@ -33,7 +33,7 @@ give the HTTP request it stands for and read the answer, without sending
 anything.
 
 A call and a client carry their codec in their type, [`Json`](#Json) or
-[`Proto`](#Proto): a client sends only calls whose generated code has its
+[`Binary`](#Binary): a client sends only calls whose generated code has its
 codec, and the compiler says so where one does not. An application usually
 wraps the sending once:
 
@@ -49,7 +49,7 @@ instead.
 
 # Codecs
 
-@docs Json, Proto
+@docs Json, Binary
 
 
 # Calls
@@ -127,19 +127,19 @@ import Time
 {-| The codec tag of proto3 JSON: [`Proto.Codec.Json`](Proto-Codec#Json).
 A client of [`Rpc.Protocol.connect`](Rpc-Protocol#connect) or
 [`transcode`](Rpc-Protocol#transcode) is a `Client Json`, and sends calls of
-code generated with `wire=both` (the default) or `wire=json`.
+code generated with `codec=both` (the default) or `codec=json`.
 -}
 type alias Json =
     Proto.Codec.Json
 
 
-{-| The codec tag of protobuf binary: [`Proto.Codec.Proto`](Proto-Codec#Proto).
-A client of [`Rpc.Protocol.connectProto`](Rpc-Protocol#connectProto) or
-[`Rpc.Protocol.grpcWeb`](Rpc-Protocol#grpcWeb) is a `Client Proto`, and sends calls of code generated with `wire=proto` or
-`wire=both`.
+{-| The codec tag of protobuf binary: [`Proto.Codec.Binary`](Proto-Codec#Binary).
+A client of [`Rpc.Protocol.connectBinary`](Rpc-Protocol#connectBinary) or
+[`Rpc.Protocol.grpcWeb`](Rpc-Protocol#grpcWeb) is a `Client Binary`, and sends calls of code generated with `codec=binary` or
+`codec=both`.
 -}
-type alias Proto =
-    Proto.Codec.Proto
+type alias Binary =
+    Proto.Codec.Binary
 
 
 
@@ -154,9 +154,9 @@ It is [`Rpc.Call.Call`](Rpc-Call#Call), where a call is adjusted
 (`withHeaders`, `withTimeout`, `withRetry`, `withoutRetry`, `withTracker`,
 `viaBinding`) and read (`serviceName`, `methodName`, `procedure`, `toJson`,
 …).
-Code generated with the default `wire=both` gives calls free in the codec,
-as here, which any client sends; `wire=json` gives `Rpc.Call Rpc.Json` calls
-and `wire=proto` `Rpc.Call Rpc.Proto` ones.
+Code generated with the default `codec=both` gives calls free in the codec,
+as here, which any client sends; `codec=json` gives `Rpc.Call Rpc.Json` calls
+and `codec=binary` `Rpc.Call Rpc.Binary` ones.
 
 -}
 type alias Call codec req res =
@@ -427,8 +427,8 @@ response cl c answer =
             read answer
 
         BytesReader _ ->
-            -- Not reached: a protocol speaking JSON holds a text wire. Read
-            -- as the failure it would be, so the branch adds no reader.
+            -- Not reached: a protocol speaking JSON holds `Text` functions.
+            -- Read as the failure it would be, so the branch adds no reader.
             Err (Rpc.Internal.Status.otherFailure answer)
 
 
@@ -441,15 +441,15 @@ response cl c answer =
         }
 
 -}
-responseBytes : Client Proto -> Call Proto req res -> Http.Response Bytes -> Result Error res
+responseBytes : Client Binary -> Call Binary req res -> Http.Response Bytes -> Result Error res
 responseBytes cl c answer =
     case (Plan.plan cl c).reader of
         BytesReader read ->
             Tuple.second (read answer)
 
         TextReader _ ->
-            -- Not reached: a protocol speaking protobuf binary holds a bytes
-            -- wire. Read as the failure it would be, as `response` does.
+            -- Not reached: a protocol speaking protobuf binary holds `Bytes`
+            -- functions. Read as the failure it would be, as `response` does.
             Err (Rpc.Internal.Status.bytesFailure answer)
 
 

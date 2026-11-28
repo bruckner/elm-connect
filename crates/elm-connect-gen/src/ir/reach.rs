@@ -1,6 +1,6 @@
 //! Which messages reach a `google.protobuf.Any`: those holding one in a
 //! field, a map value or a oneof member, or holding a message that does,
-//! across packages. Under `wire=both` an `Any` holds its message's binary,
+//! across packages. Under `codec=both` an `Any` holds its message's binary,
 //! so the JSON decoders of these messages take a registry (design §3.5).
 //!
 //! The same walk, seeded also with the well-known types whose Elm values

@@ -69,7 +69,7 @@ defaultBounds =
 -}
 messageBounds : Proto.Message.Message Bounds
 messageBounds =
-    Proto.Message.init "range.v1.Bounds" encodeBounds decodeBounds encodeBoundsBytes decodeBoundsBytes
+    Proto.Message.init "range.v1.Bounds" encodeBounds decodeBounds encodeBoundsBinary decodeBoundsBinary
 
 
 
@@ -136,8 +136,8 @@ decodeBounds =
 
 {-| Encodes a [`Bounds`](#Bounds) as protobuf binary.
 -}
-encodeBoundsBytes : Bounds -> Bytes.Encode.Encoder
-encodeBoundsBytes value =
+encodeBoundsBinary : Bounds -> Bytes.Encode.Encoder
+encodeBoundsBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.int32 1 value.max
         , Proto.Binary.implicit Proto.Binary.int32 2 value.min
@@ -151,8 +151,8 @@ encodeBoundsBytes value =
 
 {-| Decodes a [`Bounds`](#Bounds) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeBoundsBytes : Bounds -> Proto.Binary.Decoder Bounds
-mergeBoundsBytes =
+mergeBoundsBinary : Bounds -> Proto.Binary.Decoder Bounds
+mergeBoundsBinary =
     Proto.Binary.merge
         "range.v1.Bounds"
         (\number wire value ->
@@ -201,6 +201,6 @@ mergeBoundsBytes =
 
 {-| Decodes a [`Bounds`](#Bounds) from protobuf binary.
 -}
-decodeBoundsBytes : Proto.Binary.Decoder Bounds
-decodeBoundsBytes =
-    mergeBoundsBytes defaultBounds
+decodeBoundsBinary : Proto.Binary.Decoder Bounds
+decodeBoundsBinary =
+    mergeBoundsBinary defaultBounds

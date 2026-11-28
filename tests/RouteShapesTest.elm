@@ -228,7 +228,7 @@ suite =
                             ]
             , test "over a binary protocol, which writes any value, it is sent" <|
                 \_ ->
-                    Rpc.request (Rpc.client Rpc.Protocol.connectProto "https://api.example.com") (Service.getMoment { name = "moments/1", at = Just tooLate })
+                    Rpc.request (Rpc.client Rpc.Protocol.connectBinary "https://api.example.com") (Service.getMoment { name = "moments/1", at = Just tooLate })
                         |> Result.map .method
                         |> Expect.equal (Ok "POST")
             ]

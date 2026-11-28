@@ -63,7 +63,7 @@ defaultAlarm =
 -}
 messageAlarm : Proto.Message.Message Alarm
 messageAlarm =
-    Proto.Message.init "clock.v1.Alarm" encodeAlarm decodeAlarm encodeAlarmBytes decodeAlarmBytes
+    Proto.Message.init "clock.v1.Alarm" encodeAlarm decodeAlarm encodeAlarmBinary decodeAlarmBinary
 
 
 
@@ -126,8 +126,8 @@ decodeAlarm =
 
 {-| Encodes an [`Alarm`](#Alarm) as protobuf binary.
 -}
-encodeAlarmBytes : Alarm -> Bytes.Encode.Encoder
-encodeAlarmBytes value =
+encodeAlarmBinary : Alarm -> Bytes.Encode.Encoder
+encodeAlarmBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.optional Proto.Binary.timestamp 1 value.at
         ]
@@ -139,8 +139,8 @@ encodeAlarmBytes value =
 
 {-| Decodes an [`Alarm`](#Alarm) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeAlarmBytes : Alarm -> Proto.Binary.Decoder Alarm
-mergeAlarmBytes =
+mergeAlarmBinary : Alarm -> Proto.Binary.Decoder Alarm
+mergeAlarmBinary =
     Proto.Binary.merge
         "clock.v1.Alarm"
         (\number wire value ->
@@ -163,6 +163,6 @@ mergeAlarmBytes =
 
 {-| Decodes an [`Alarm`](#Alarm) from protobuf binary.
 -}
-decodeAlarmBytes : Proto.Binary.Decoder Alarm
-decodeAlarmBytes =
-    mergeAlarmBytes defaultAlarm
+decodeAlarmBinary : Proto.Binary.Decoder Alarm
+decodeAlarmBinary =
+    mergeAlarmBinary defaultAlarm

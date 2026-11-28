@@ -192,7 +192,7 @@ equality =
             \_ ->
                 [ every Rpc.Protocol.connect == every Rpc.Protocol.connect
                 , every Rpc.Protocol.transcode == every Rpc.Protocol.transcode
-                , every Rpc.Protocol.connectProto == every Rpc.Protocol.connectProto
+                , every Rpc.Protocol.connectBinary == every Rpc.Protocol.connectBinary
                 , every Rpc.Protocol.grpcWeb == every Rpc.Protocol.grpcWeb
                 ]
                     |> Expect.equal [ True, True, True, True ]
@@ -207,7 +207,7 @@ equality =
         , test "over Connect, a client lacking any one modifier compares unequal to one with all, without throwing" <|
             \_ ->
                 ( equalTo (every Rpc.Protocol.connect) (allBut Rpc.Protocol.connect)
-                , equalTo (every Rpc.Protocol.connectProto) (allBut Rpc.Protocol.connectProto)
+                , equalTo (every Rpc.Protocol.connectBinary) (allBut Rpc.Protocol.connectBinary)
                 )
                     |> Expect.equal ( [], [] )
         , test "over transcoding, only the Connect GET modifiers, which leave it as it was, compare equal" <|
@@ -220,15 +220,15 @@ equality =
                     |> Expect.equal [ "withConnectGet", "withMaxGetUrl" ]
         , test "a gRPC-Web client compares unequal to a Connect proto one built alike, without throwing" <|
             \_ ->
-                ( every Rpc.Protocol.grpcWeb == every Rpc.Protocol.connectProto
-                , Rpc.client Rpc.Protocol.grpcWeb url == Rpc.client Rpc.Protocol.connectProto url
+                ( every Rpc.Protocol.grpcWeb == every Rpc.Protocol.connectBinary
+                , Rpc.client Rpc.Protocol.grpcWeb url == Rpc.client Rpc.Protocol.connectBinary url
                 )
                     |> Expect.equal ( False, False )
         , test "clients differing in one modifier's argument compare unequal, over each protocol" <|
             \_ ->
                 [ equalTo (every Rpc.Protocol.connect) (otherwise Rpc.Protocol.connect)
                 , equalTo (every Rpc.Protocol.transcode) (otherwise Rpc.Protocol.transcode)
-                , equalTo (every Rpc.Protocol.connectProto) (otherwise Rpc.Protocol.connectProto)
+                , equalTo (every Rpc.Protocol.connectBinary) (otherwise Rpc.Protocol.connectBinary)
                 , equalTo (every Rpc.Protocol.grpcWeb) (otherwise Rpc.Protocol.grpcWeb)
                 ]
                     |> Expect.equal [ [], [ "withMaxGetUrl" ], [], [ "withMaxGetUrl" ] ]
@@ -245,18 +245,18 @@ equality =
                 in
                 [ unlimited Rpc.Protocol.connect
                 , unlimited Rpc.Protocol.transcode
-                , unlimited Rpc.Protocol.connectProto
+                , unlimited Rpc.Protocol.connectBinary
                 , unlimited Rpc.Protocol.grpcWeb
                 ]
                     |> Expect.equal (List.repeat 4 [ True, True, True, True ])
         , test "a limit below 1 removes only its own limit" <|
             \_ ->
-                (Rpc.Protocol.connectProto
+                (Rpc.Protocol.connectBinary
                     |> Rpc.Protocol.withReadMaxBytes 10
                     |> Rpc.Protocol.withWriteMaxBytes 20
                     |> Rpc.Protocol.withReadMaxBytes 0
                 )
-                    == Rpc.Protocol.withWriteMaxBytes 20 Rpc.Protocol.connectProto
+                    == Rpc.Protocol.withWriteMaxBytes 20 Rpc.Protocol.connectBinary
                     |> Expect.equal True
         , test "two clients given one top-level registry are ==" <|
             \_ ->
@@ -301,10 +301,10 @@ readers =
             \_ ->
                 let
                     client =
-                        every Rpc.Protocol.connectProto
+                        every Rpc.Protocol.connectBinary
                 in
                 ( ( Rpc.Client.protocol client
-                        == (Rpc.Protocol.connectProto
+                        == (Rpc.Protocol.connectBinary
                                 |> Rpc.Protocol.withConnectGet
                                 |> Rpc.Protocol.withMaxGetUrl 2048
                                 |> Rpc.Protocol.withReadMaxBytes 1000000
@@ -338,7 +338,7 @@ readers =
         , test "a protocol's name and codec" <|
             \_ ->
                 [ ( Rpc.Protocol.name Rpc.Protocol.connect, Rpc.Protocol.codec Rpc.Protocol.connect )
-                , ( Rpc.Protocol.name Rpc.Protocol.connectProto, Rpc.Protocol.codec Rpc.Protocol.connectProto )
+                , ( Rpc.Protocol.name Rpc.Protocol.connectBinary, Rpc.Protocol.codec Rpc.Protocol.connectBinary )
                 , ( Rpc.Protocol.name Rpc.Protocol.transcode, Rpc.Protocol.codec Rpc.Protocol.transcode )
                 , ( Rpc.Protocol.name Rpc.Protocol.grpcWeb, Rpc.Protocol.codec Rpc.Protocol.grpcWeb )
                 ]
@@ -355,7 +355,7 @@ json =
                     |> Expect.equal """{"protocol":{"name":"connect","codec":"json","get":true,"maxGetUrl":null,"readMaxBytes":null,"writeMaxBytes":null},"baseUrl":"https://api.example.com","headers":[],"timeout":5000,"withCredentials":false,"retry":false}"""
         , test "a client with every modifier, over Connect proto" <|
             \_ ->
-                Json.Encode.encode 0 (Rpc.Client.toJson (every Rpc.Protocol.connectProto))
+                Json.Encode.encode 0 (Rpc.Client.toJson (every Rpc.Protocol.connectBinary))
                     |> Expect.equal """{"protocol":{"name":"connect","codec":"proto","get":true,"maxGetUrl":2048,"readMaxBytes":1000000,"writeMaxBytes":100000},"baseUrl":"https://api.example.com","headers":[["Authorization","Bearer t"]],"timeout":5000,"withCredentials":true,"retry":true}"""
         , test "the Connect GET options do not reach gRPC-Web" <|
             \_ ->

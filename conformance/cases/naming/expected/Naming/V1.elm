@@ -154,7 +154,7 @@ enumHttpMethod =
 -}
 messageTag : Proto.Message.Message Tag
 messageTag =
-    Proto.Message.init "naming.v1.Tag" encodeTag decodeTag encodeTagBytes decodeTagBytes
+    Proto.Message.init "naming.v1.Tag" encodeTag decodeTag encodeTagBinary decodeTagBinary
 
 
 
@@ -324,8 +324,8 @@ decodeTagCase =
 
 {-| The number protobuf binary writes a [`Shape`](#Shape) as.
 -}
-encodeShapeBytes : Shape -> Int
-encodeShapeBytes value =
+encodeShapeBinary : Shape -> Int
+encodeShapeBinary value =
     case value of
         ShapeUnspecified ->
             0
@@ -342,8 +342,8 @@ encodeShapeBytes value =
 
 {-| The number protobuf binary writes a [`HttpMethod`](#HttpMethod) as.
 -}
-encodeHttpMethodBytes : HttpMethod -> Int
-encodeHttpMethodBytes value =
+encodeHttpMethodBinary : HttpMethod -> Int
+encodeHttpMethodBinary value =
     case value of
         HttpMethodUnspecified ->
             0
@@ -357,8 +357,8 @@ encodeHttpMethodBytes value =
 
 {-| Encodes a [`Tag`](#Tag) as protobuf binary.
 -}
-encodeTagBytes : Tag -> Bytes.Encode.Encoder
-encodeTagBytes value =
+encodeTagBinary : Tag -> Bytes.Encode.Encoder
+encodeTagBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.type_
         , Proto.Binary.implicit Proto.Binary.bool 2 value.if_
@@ -367,16 +367,16 @@ encodeTagBytes value =
         , Proto.Binary.implicit Proto.Binary.string 5 value.displayName
         , Proto.Binary.implicit Proto.Binary.string 6 value.httpUrl
         , Proto.Binary.implicit Proto.Binary.int32 7 value.v2Count
-        , Proto.Binary.implicit (Proto.Binary.enum encodeShapeBytes decodeShapeBytes) 8 value.shape
-        , Proto.Binary.implicit (Proto.Binary.enum encodeHttpMethodBytes decodeHttpMethodBytes) 9 value.method
-        , encodeTagCaseBytes value.case_
+        , Proto.Binary.implicit (Proto.Binary.enum encodeShapeBinary decodeShapeBinary) 8 value.shape
+        , Proto.Binary.implicit (Proto.Binary.enum encodeHttpMethodBinary decodeHttpMethodBinary) 9 value.method
+        , encodeTagCaseBinary value.case_
         ]
 
 
 {-| Encodes a [`TagCase`](#TagCase) as protobuf binary: its set member's field.
 -}
-encodeTagCaseBytes : TagCase -> Bytes.Encode.Encoder
-encodeTagCaseBytes value =
+encodeTagCaseBinary : TagCase -> Bytes.Encode.Encoder
+encodeTagCaseBinary value =
     case value of
         TagCaseUnset ->
             Bytes.Encode.sequence []
@@ -394,8 +394,8 @@ encodeTagCaseBytes value =
 
 {-| A [`Shape`](#Shape) from the number protobuf binary carries.
 -}
-decodeShapeBytes : Int -> Shape
-decodeShapeBytes number =
+decodeShapeBinary : Int -> Shape
+decodeShapeBinary number =
     case number of
         1 ->
             Shape2d
@@ -412,8 +412,8 @@ decodeShapeBytes number =
 
 {-| A [`HttpMethod`](#HttpMethod) from the number protobuf binary carries.
 -}
-decodeHttpMethodBytes : Int -> HttpMethod
-decodeHttpMethodBytes number =
+decodeHttpMethodBinary : Int -> HttpMethod
+decodeHttpMethodBinary number =
     case number of
         1 ->
             HttpMethodGet
@@ -427,8 +427,8 @@ decodeHttpMethodBytes number =
 
 {-| Decodes a [`Tag`](#Tag) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeTagBytes : Tag -> Proto.Binary.Decoder Tag
-mergeTagBytes =
+mergeTagBinary : Tag -> Proto.Binary.Decoder Tag
+mergeTagBinary =
     Proto.Binary.merge
         "naming.v1.Tag"
         (\number wire value ->
@@ -568,7 +568,7 @@ mergeTagBytes =
 
                 8 ->
                     Proto.Binary.field
-                        (Proto.Binary.enum encodeShapeBytes decodeShapeBytes)
+                        (Proto.Binary.enum encodeShapeBinary decodeShapeBinary)
                         (\v ->
                             { type_ = value.type_
                             , if_ = value.if_
@@ -587,7 +587,7 @@ mergeTagBytes =
 
                 9 ->
                     Proto.Binary.field
-                        (Proto.Binary.enum encodeHttpMethodBytes decodeHttpMethodBytes)
+                        (Proto.Binary.enum encodeHttpMethodBinary decodeHttpMethodBinary)
                         (\v ->
                             { type_ = value.type_
                             , if_ = value.if_
@@ -650,6 +650,6 @@ mergeTagBytes =
 
 {-| Decodes a [`Tag`](#Tag) from protobuf binary.
 -}
-decodeTagBytes : Proto.Binary.Decoder Tag
-decodeTagBytes =
-    mergeTagBytes defaultTag
+decodeTagBinary : Proto.Binary.Decoder Tag
+decodeTagBinary =
+    mergeTagBinary defaultTag

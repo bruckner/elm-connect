@@ -60,8 +60,8 @@ getMessage =
             "GetMessage"
             Routes.V1.encodeGetMessageRequest
             (\_ -> Routes.V1.decodeMessage)
-            Routes.V1.encodeGetMessageRequestBytes
-            Routes.V1.decodeMessageBytes
+            Routes.V1.encodeGetMessageRequestBinary
+            Routes.V1.decodeMessageBinary
             |> Proto.Method.withRoutes [ routeGetMessage0, routeGetMessage1, routeGetMessage2, routeGetMessage3 ]
         )
 
@@ -82,8 +82,8 @@ updateMessage =
             "UpdateMessage"
             Routes.V1.encodeUpdateMessageRequest
             (\_ -> Routes.V1.decodeMessage)
-            Routes.V1.encodeUpdateMessageRequestBytes
-            Routes.V1.decodeMessageBytes
+            Routes.V1.encodeUpdateMessageRequestBinary
+            Routes.V1.decodeMessageBinary
             |> Proto.Method.withRoutes [ routeUpdateMessage0 ]
         )
 
@@ -102,8 +102,8 @@ updateMessageWhole =
             "UpdateMessageWhole"
             Routes.V1.encodeMessage
             (\_ -> Routes.V1.decodeMessage)
-            Routes.V1.encodeMessageBytes
-            Routes.V1.decodeMessageBytes
+            Routes.V1.encodeMessageBinary
+            Routes.V1.decodeMessageBinary
             |> Proto.Method.withRoutes [ routeUpdateMessageWhole0 ]
         )
 
@@ -122,8 +122,8 @@ postSub =
             "PostSub"
             Routes.V1.encodeGetMessageRequest
             (\_ -> Routes.V1.decodeMessage)
-            Routes.V1.encodeGetMessageRequestBytes
-            Routes.V1.decodeMessageBytes
+            Routes.V1.encodeGetMessageRequestBinary
+            Routes.V1.decodeMessageBinary
             |> Proto.Method.withRoutes [ routePostSub0 ]
         )
 
@@ -142,8 +142,8 @@ query =
             "Query"
             Routes.V1.encodeEverything
             (\_ -> Routes.V1.decodeEverything)
-            Routes.V1.encodeEverythingBytes
-            Routes.V1.decodeEverythingBytes
+            Routes.V1.encodeEverythingBinary
+            Routes.V1.decodeEverythingBinary
             |> Proto.Method.withRoutes [ routeQuery0 ]
         )
 
@@ -162,8 +162,8 @@ single =
             "Single"
             Routes.V1.encodeEverything
             (\_ -> Routes.V1.decodeEverything)
-            Routes.V1.encodeEverythingBytes
-            Routes.V1.decodeEverythingBytes
+            Routes.V1.encodeEverythingBinary
+            Routes.V1.decodeEverythingBinary
             |> Proto.Method.withRoutes [ routeSingle0 ]
         )
 
@@ -182,8 +182,8 @@ multi =
             "Multi"
             Routes.V1.encodeEverything
             (\_ -> Routes.V1.decodeEverything)
-            Routes.V1.encodeEverythingBytes
-            Routes.V1.decodeEverythingBytes
+            Routes.V1.encodeEverythingBinary
+            Routes.V1.decodeEverythingBinary
             |> Proto.Method.withRoutes [ routeMulti0 ]
         )
 
@@ -202,8 +202,8 @@ typed =
             "Typed"
             Routes.V1.encodeEverything
             (\_ -> Routes.V1.decodeEverything)
-            Routes.V1.encodeEverythingBytes
-            Routes.V1.decodeEverythingBytes
+            Routes.V1.encodeEverythingBinary
+            Routes.V1.decodeEverythingBinary
             |> Proto.Method.withRoutes [ routeTyped0 ]
         )
 
@@ -222,8 +222,8 @@ files =
             "Files"
             Routes.V1.encodeFileRequest
             (\_ -> Routes.V1.decodeFileRequest)
-            Routes.V1.encodeFileRequestBytes
-            Routes.V1.decodeFileRequestBytes
+            Routes.V1.encodeFileRequestBinary
+            Routes.V1.decodeFileRequestBinary
             |> Proto.Method.withRoutes [ routeFiles0 ]
         )
 
@@ -242,8 +242,8 @@ cancel =
             "Cancel"
             Routes.V1.encodeResource
             (\_ -> Routes.V1.decodeResource)
-            Routes.V1.encodeResourceBytes
-            Routes.V1.decodeResourceBytes
+            Routes.V1.encodeResourceBinary
+            Routes.V1.decodeResourceBinary
             |> Proto.Method.withRoutes [ routeCancel0 ]
         )
 
@@ -262,8 +262,8 @@ updateResource =
             "UpdateResource"
             Routes.V1.encodeUpdateResourceRequest
             (\_ -> Routes.V1.decodeResource)
-            Routes.V1.encodeUpdateResourceRequestBytes
-            Routes.V1.decodeResourceBytes
+            Routes.V1.encodeUpdateResourceRequestBinary
+            Routes.V1.decodeResourceBinary
             |> Proto.Method.withRoutes [ routeUpdateResource0 ]
         )
 
@@ -282,8 +282,8 @@ head =
             "Head"
             Routes.V1.encodeFileRequest
             (\_ -> Routes.V1.decodeFileRequest)
-            Routes.V1.encodeFileRequestBytes
-            Routes.V1.decodeFileRequestBytes
+            Routes.V1.encodeFileRequestBinary
+            Routes.V1.decodeFileRequestBinary
             |> Proto.Method.withRoutes [ routeHead0 ]
         )
 
@@ -305,8 +305,8 @@ bytesPath =
             "BytesPath"
             Routes.V1.encodeEverything
             (\_ -> Routes.V1.decodeEverything)
-            Routes.V1.encodeEverythingBytes
-            Routes.V1.decodeEverythingBytes
+            Routes.V1.encodeEverythingBinary
+            Routes.V1.decodeEverythingBinary
             |> Proto.Method.withRoutes [ routeBytesPath0 ]
         )
 
@@ -329,8 +329,8 @@ unbound =
             "Unbound"
             Routes.V1.encodeGetMessageRequest
             (\_ -> Routes.V1.decodeMessage)
-            Routes.V1.encodeGetMessageRequestBytes
-            Routes.V1.decodeMessageBytes
+            Routes.V1.encodeGetMessageRequestBinary
+            Routes.V1.decodeMessageBinary
         )
 
 

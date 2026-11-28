@@ -113,7 +113,7 @@ defaultCounters =
 -}
 messageCounters : Proto.Message.Message Counters
 messageCounters =
-    Proto.Message.init "int64_option.v1.Counters" encodeCounters decodeCounters encodeCountersBytes decodeCountersBytes
+    Proto.Message.init "int64_option.v1.Counters" encodeCounters decodeCounters encodeCountersBinary decodeCountersBinary
 
 
 
@@ -229,8 +229,8 @@ decodeCountersLimit =
 
 {-| Encodes a [`Counters`](#Counters) as protobuf binary.
 -}
-encodeCountersBytes : Counters -> Bytes.Encode.Encoder
-encodeCountersBytes value =
+encodeCountersBinary : Counters -> Bytes.Encode.Encoder
+encodeCountersBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.int64AsInt 1 value.int64Value
         , Proto.Binary.implicit Proto.Binary.uint64AsInt 2 value.uint64Value
@@ -244,14 +244,14 @@ encodeCountersBytes value =
         , Proto.Binary.list Proto.Binary.uint64 10 value.exactSamples
         , Proto.Binary.dict Proto.Binary.int64 Proto.Binary.int64AsInt 11 value.byId
         , Proto.Binary.optional Proto.Binary.int64ValueAsInt 12 value.wrapped
-        , encodeCountersLimitBytes value.limit
+        , encodeCountersLimitBinary value.limit
         ]
 
 
 {-| Encodes a [`CountersLimit`](#CountersLimit) as protobuf binary: its set member's field.
 -}
-encodeCountersLimitBytes : CountersLimit -> Bytes.Encode.Encoder
-encodeCountersLimitBytes value =
+encodeCountersLimitBinary : CountersLimit -> Bytes.Encode.Encoder
+encodeCountersLimitBinary value =
     case value of
         CountersLimitUnset ->
             Bytes.Encode.sequence []
@@ -269,8 +269,8 @@ encodeCountersLimitBytes value =
 
 {-| Decodes a [`Counters`](#Counters) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeCountersBytes : Counters -> Proto.Binary.Decoder Counters
-mergeCountersBytes =
+mergeCountersBinary : Counters -> Proto.Binary.Decoder Counters
+mergeCountersBinary =
     Proto.Binary.merge
         "int64_option.v1.Counters"
         (\number wire value ->
@@ -609,6 +609,6 @@ mergeCountersBytes =
 
 {-| Decodes a [`Counters`](#Counters) from protobuf binary.
 -}
-decodeCountersBytes : Proto.Binary.Decoder Counters
-decodeCountersBytes =
-    mergeCountersBytes defaultCounters
+decodeCountersBinary : Proto.Binary.Decoder Counters
+decodeCountersBinary =
+    mergeCountersBinary defaultCounters

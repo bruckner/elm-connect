@@ -1,76 +1,76 @@
 naming::codec_collision
 
   × The package `shelf.v1` has two definitions whose codecs both become the
-  │ Elm values `encodeBookBytes` and `decodeBookBytes`.
+  │ Elm values `encodeBookBinary` and `decodeBookBinary`.
     ╭─[shelf.proto:12:9]
  11 │
  12 │ message Book {
     ·         ──┬─
-    ·           ╰── the binary codecs of message `shelf.v1.Book` become `encodeBookBytes` and `decodeBookBytes`
+    ·           ╰── the binary codecs of message `shelf.v1.Book` become `encodeBookBinary` and `decodeBookBinary`
  13 │   string title = 1;
  14 │ }
  15 │
- 16 │ message BookBytes {
-    ·         ────┬────
-    ·             ╰── and so do the JSON codecs of message `shelf.v1.BookBytes`
+ 16 │ message BookBinary {
+    ·         ─────┬────
+    ·              ╰── and so do the JSON codecs of message `shelf.v1.BookBinary`
  17 │   bytes content = 1;
     ╰────
   help: A type's protobuf binary codecs are named for its JSON codecs with
-        `Bytes` at the end (`encodeNoteBytes` beside `encodeNote`), so the
-        JSON codecs of a type named for another with `Bytes` at the end
-        (`NoteBytes` beside `Note`) take the same names, and a module cannot
+        `Binary` at the end (`encodeNoteBinary` beside `encodeNote`), so the
+        JSON codecs of a type named for another with `Binary` at the end
+        (`NoteBinary` beside `Note`) take the same names, and a module cannot
         define two values with one name. Every type has both codecs, whatever
-        the `wire` option says. Rename one of them in the proto, or rename one
-        with `rename=shelf.v1.BookBytes:<Elm name>`.
+        the `codec` option says. Rename one of them in the proto, or rename
+        one with `rename=shelf.v1.BookBinary:<Elm name>`.
 
 naming::codec_collision
 
   × The package `shelf.v1` has two definitions whose codecs both become the
-  │ Elm value `encodeChoicePickBytes`.
+  │ Elm value `encodeChoicePickBinary`.
     ╭─[shelf.proto:29:9]
  28 │ message Choice {
  29 │   oneof pick {
     ·         ──┬─
-    ·           ╰── the binary codec of oneof `pick` of `shelf.v1.Choice` becomes `encodeChoicePickBytes`
+    ·           ╰── the binary codec of oneof `pick` of `shelf.v1.Choice` becomes `encodeChoicePickBinary`
  30 │     string name = 1;
  31 │     int32 number = 2;
  32 │   }
  33 │ }
  34 │
- 35 │ message ChoicePickBytes {
-    ·         ───────┬───────
-    ·                ╰── and so does the JSON codec of message `shelf.v1.ChoicePickBytes`
+ 35 │ message ChoicePickBinary {
+    ·         ────────┬───────
+    ·                 ╰── and so does the JSON codec of message `shelf.v1.ChoicePickBinary`
  36 │   bytes raw = 1;
     ╰────
   help: A type's protobuf binary codecs are named for its JSON codecs with
-        `Bytes` at the end (`encodeNoteBytes` beside `encodeNote`), so the
-        JSON codecs of a type named for another with `Bytes` at the end
-        (`NoteBytes` beside `Note`) take the same names, and a module cannot
+        `Binary` at the end (`encodeNoteBinary` beside `encodeNote`), so the
+        JSON codecs of a type named for another with `Binary` at the end
+        (`NoteBinary` beside `Note`) take the same names, and a module cannot
         define two values with one name. Every type has both codecs, whatever
-        the `wire` option says. Rename one of them in the proto, or rename one
-        with `rename=shelf.v1.ChoicePickBytes:<Elm name>`.
+        the `codec` option says. Rename one of them in the proto, or rename
+        one with `rename=shelf.v1.ChoicePickBinary:<Elm name>`.
 
 naming::codec_collision
 
   × The package `shelf.v1` has two definitions whose codecs both become the
-  │ Elm values `encodeShelfBytes` and `decodeShelfBytes`.
+  │ Elm values `encodeShelfBinary` and `decodeShelfBinary`.
     ╭─[shelf.proto:20:9]
  19 │
  20 │ message Shelf {
     ·         ──┬──
-    ·           ╰── the binary codecs of message `shelf.v1.Shelf` become `encodeShelfBytes` and `decodeShelfBytes`
+    ·           ╰── the binary codecs of message `shelf.v1.Shelf` become `encodeShelfBinary` and `decodeShelfBinary`
  21 │   repeated Book books = 1;
  22 │ }
  23 │
- 24 │ enum ShelfBytes {
-    ·      ─────┬────
-    ·           ╰── and so do the JSON codecs of enum `shelf.v1.ShelfBytes`
- 25 │   SHELF_BYTES_UNSPECIFIED = 0;
+ 24 │ enum ShelfBinary {
+    ·      ─────┬─────
+    ·           ╰── and so do the JSON codecs of enum `shelf.v1.ShelfBinary`
+ 25 │   SHELF_BINARY_UNSPECIFIED = 0;
     ╰────
   help: A type's protobuf binary codecs are named for its JSON codecs with
-        `Bytes` at the end (`encodeNoteBytes` beside `encodeNote`), so the
-        JSON codecs of a type named for another with `Bytes` at the end
-        (`NoteBytes` beside `Note`) take the same names, and a module cannot
+        `Binary` at the end (`encodeNoteBinary` beside `encodeNote`), so the
+        JSON codecs of a type named for another with `Binary` at the end
+        (`NoteBinary` beside `Note`) take the same names, and a module cannot
         define two values with one name. Every type has both codecs, whatever
-        the `wire` option says. Rename one of them in the proto, or rename one
-        with `rename=shelf.v1.ShelfBytes:<Elm name>`.
+        the `codec` option says. Rename one of them in the proto, or rename
+        one with `rename=shelf.v1.ShelfBinary:<Elm name>`.

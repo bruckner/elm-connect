@@ -29,12 +29,12 @@ import Test exposing (Test, describe, test)
 {-| A method without side effects, so that a GET would be sent if the
 protocol sent one.
 -}
-getNote : GetNote -> Rpc.Call Rpc.Proto GetNote String
+getNote : GetNote -> Rpc.Call Rpc.Binary GetNote String
 getNote =
     binaryOnly
 
 
-grpcWeb : Rpc.Client Rpc.Proto
+grpcWeb : Rpc.Client Rpc.Binary
 grpcWeb =
     over Rpc.Protocol.grpcWeb
 
@@ -68,7 +68,7 @@ body =
     E.sequence >> E.encode
 
 
-answerOver : Rpc.Client Rpc.Proto -> Int -> List ( String, String ) -> List E.Encoder -> Result Error String
+answerOver : Rpc.Client Rpc.Binary -> Int -> List ( String, String ) -> List E.Encoder -> Result Error String
 answerOver client status headers frames =
     Rpc.responseBytes client (getNote { name = "hi" }) (Http.GoodStatus_ (metadata status headers) (body frames))
 

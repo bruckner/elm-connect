@@ -55,8 +55,8 @@ getBlob =
             "GetBlob"
             Blobs.V1.encodeBlob
             (\_ -> Blobs.V1.decodeBlob)
-            Blobs.V1.encodeBlobBytes
-            Blobs.V1.decodeBlobBytes
+            Blobs.V1.encodeBlobBinary
+            Blobs.V1.decodeBlobBinary
             |> Proto.Method.withRoutes [ routeGetBlob0, routeGetBlob1 ]
         )
 
@@ -75,8 +75,8 @@ findBlob =
             "FindBlob"
             Blobs.V1.encodeBlob
             (\_ -> Blobs.V1.decodeBlob)
-            Blobs.V1.encodeBlobBytes
-            Blobs.V1.decodeBlobBytes
+            Blobs.V1.encodeBlobBinary
+            Blobs.V1.decodeBlobBinary
             |> Proto.Method.withRoutes [ routeFindBlob0 ]
         )
 
@@ -98,8 +98,8 @@ labelBlob =
             "LabelBlob"
             Blobs.V1.encodeLabelBlobRequest
             (\_ -> Blobs.V1.decodeBlob)
-            Blobs.V1.encodeLabelBlobRequestBytes
-            Blobs.V1.decodeBlobBytes
+            Blobs.V1.encodeLabelBlobRequestBinary
+            Blobs.V1.decodeBlobBinary
             |> Proto.Method.withJsonRoutes [ routeLabelBlob0, routeLabelBlob1 ]
         )
 
@@ -118,8 +118,8 @@ putLabel =
             "PutLabel"
             Blobs.V1.encodeLabeled
             Blobs.V1.decodeLabeledWith
-            Blobs.V1.encodeLabeledBytes
-            Blobs.V1.decodeLabeledBytes
+            Blobs.V1.encodeLabeledBinary
+            Blobs.V1.decodeLabeledBinary
             |> Proto.Method.withJsonRoutes [ routePutLabel0 ]
         )
 
@@ -138,8 +138,8 @@ addFolder =
             "AddFolder"
             Blobs.V1.encodeFolder
             (\_ -> Blobs.V1.decodeFolder)
-            Blobs.V1.encodeFolderBytes
-            Blobs.V1.decodeFolderBytes
+            Blobs.V1.encodeFolderBinary
+            Blobs.V1.decodeFolderBinary
             |> Proto.Method.withRoutes [ routeAddFolder0 ]
         )
 
@@ -158,8 +158,8 @@ moveFolder =
             "MoveFolder"
             Blobs.V1.encodeFolder
             (\_ -> Blobs.V1.decodeFolder)
-            Blobs.V1.encodeFolderBytes
-            Blobs.V1.decodeFolderBytes
+            Blobs.V1.encodeFolderBinary
+            Blobs.V1.decodeFolderBinary
             |> Proto.Method.withRoutes [ routeMoveFolder0 ]
         )
 
@@ -178,8 +178,8 @@ touch =
             "Touch"
             Blobs.V1.encodeSlots
             (\_ -> Blobs.V1.decodeSlots)
-            Blobs.V1.encodeSlotsBytes
-            Blobs.V1.decodeSlotsBytes
+            Blobs.V1.encodeSlotsBinary
+            Blobs.V1.decodeSlotsBinary
             |> Proto.Method.withRoutes [ routeTouch0 ]
         )
 
@@ -198,8 +198,8 @@ setValue =
             "SetValue"
             Blobs.V1.encodeFree
             (\_ -> Blobs.V1.decodeFree)
-            Blobs.V1.encodeFreeBytes
-            Blobs.V1.decodeFreeBytes
+            Blobs.V1.encodeFreeBinary
+            Blobs.V1.decodeFreeBinary
             |> Proto.Method.withJsonRoutes [ routeSetValue0 ]
         )
 
@@ -221,8 +221,8 @@ getMoment =
             "GetMoment"
             Blobs.V1.encodeMoment
             (\_ -> Blobs.V1.decodeMoment)
-            Blobs.V1.encodeMomentBytes
-            Blobs.V1.decodeMomentBytes
+            Blobs.V1.encodeMomentBinary
+            Blobs.V1.decodeMomentBinary
             |> Proto.Method.withRoutes [ routeGetMoment0, routeGetMoment1 ]
         )
 
@@ -241,8 +241,8 @@ putMoment =
             "PutMoment"
             Blobs.V1.encodeMoment
             (\_ -> Blobs.V1.decodeMoment)
-            Blobs.V1.encodeMomentBytes
-            Blobs.V1.decodeMomentBytes
+            Blobs.V1.encodeMomentBinary
+            Blobs.V1.decodeMomentBinary
             |> Proto.Method.withJsonRoutes [ routePutMoment0 ]
         )
 
@@ -261,8 +261,8 @@ stamp =
             "Stamp"
             Blobs.V1.encodeStampRequest
             (\_ -> Blobs.V1.decodeMoment)
-            Blobs.V1.encodeStampRequestBytes
-            Blobs.V1.decodeMomentBytes
+            Blobs.V1.encodeStampRequestBinary
+            Blobs.V1.decodeMomentBinary
             |> Proto.Method.withJsonRoutes [ routeStamp0 ]
         )
 

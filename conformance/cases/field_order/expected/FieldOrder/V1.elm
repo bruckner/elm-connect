@@ -136,14 +136,14 @@ enumMood =
 -}
 messageDraft : Proto.Message.Message Draft
 messageDraft =
-    Proto.Message.init "field_order.v1.Draft" encodeDraft decodeDraft encodeDraftBytes decodeDraftBytes
+    Proto.Message.init "field_order.v1.Draft" encodeDraft decodeDraft encodeDraftBinary decodeDraftBinary
 
 
 {-| The typed value of [`DraftMargin`](#DraftMargin): its full name and codecs.
 -}
 messageDraftMargin : Proto.Message.Message DraftMargin
 messageDraftMargin =
-    Proto.Message.init "field_order.v1.Draft.Margin" encodeDraftMargin decodeDraftMargin encodeDraftMarginBytes decodeDraftMarginBytes
+    Proto.Message.init "field_order.v1.Draft.Margin" encodeDraftMargin decodeDraftMargin encodeDraftMarginBinary decodeDraftMarginBinary
 
 
 
@@ -292,8 +292,8 @@ decodeDraftMargin =
 
 {-| The number protobuf binary writes a [`Mood`](#Mood) as.
 -}
-encodeMoodBytes : Mood -> Int
-encodeMoodBytes value =
+encodeMoodBinary : Mood -> Int
+encodeMoodBinary value =
     case value of
         MoodUnspecified ->
             0
@@ -304,8 +304,8 @@ encodeMoodBytes value =
 
 {-| Encodes a [`Draft`](#Draft) as protobuf binary.
 -}
-encodeDraftBytes : Draft -> Bytes.Encode.Encoder
-encodeDraftBytes value =
+encodeDraftBinary : Draft -> Bytes.Encode.Encoder
+encodeDraftBinary value =
     Bytes.Encode.sequence
         [ case value.body of
             DraftBodyBlob member ->
@@ -314,9 +314,9 @@ encodeDraftBytes value =
             _ ->
                 Bytes.Encode.sequence []
         , Proto.Binary.list Proto.Binary.string 2 value.tags
-        , Proto.Binary.optional (Proto.Binary.embedded encodeDraftMarginBytes mergeDraftMarginBytes defaultDraftMargin) 3 value.margin
+        , Proto.Binary.optional (Proto.Binary.embedded encodeDraftMarginBinary mergeDraftMarginBinary defaultDraftMargin) 3 value.margin
         , Proto.Binary.implicit Proto.Binary.string 4 value.title
-        , Proto.Binary.implicit (Proto.Binary.enum encodeMoodBytes decodeMoodBytes) 6 value.mood
+        , Proto.Binary.implicit (Proto.Binary.enum encodeMoodBinary decodeMoodBinary) 6 value.mood
         , case value.body of
             DraftBodyText member ->
                 Proto.Binary.present Proto.Binary.string 8 member
@@ -328,8 +328,8 @@ encodeDraftBytes value =
 
 {-| Encodes a [`DraftBody`](#DraftBody) as protobuf binary: its set member's field.
 -}
-encodeDraftBodyBytes : DraftBody -> Bytes.Encode.Encoder
-encodeDraftBodyBytes value =
+encodeDraftBodyBinary : DraftBody -> Bytes.Encode.Encoder
+encodeDraftBodyBinary value =
     case value of
         DraftBodyUnset ->
             Bytes.Encode.sequence []
@@ -343,8 +343,8 @@ encodeDraftBodyBytes value =
 
 {-| Encodes a [`DraftMargin`](#DraftMargin) as protobuf binary.
 -}
-encodeDraftMarginBytes : DraftMargin -> Bytes.Encode.Encoder
-encodeDraftMarginBytes value =
+encodeDraftMarginBinary : DraftMargin -> Bytes.Encode.Encoder
+encodeDraftMarginBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.int32 1 value.right
         , Proto.Binary.implicit Proto.Binary.int32 2 value.left
@@ -357,8 +357,8 @@ encodeDraftMarginBytes value =
 
 {-| A [`Mood`](#Mood) from the number protobuf binary carries.
 -}
-decodeMoodBytes : Int -> Mood
-decodeMoodBytes number =
+decodeMoodBinary : Int -> Mood
+decodeMoodBinary number =
     case number of
         1 ->
             MoodCalm
@@ -369,8 +369,8 @@ decodeMoodBytes number =
 
 {-| Decodes a [`Draft`](#Draft) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeDraftBytes : Draft -> Proto.Binary.Decoder Draft
-mergeDraftBytes =
+mergeDraftBinary : Draft -> Proto.Binary.Decoder Draft
+mergeDraftBinary =
     Proto.Binary.merge
         "field_order.v1.Draft"
         (\number wire value ->
@@ -406,7 +406,7 @@ mergeDraftBytes =
 
                 3 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeDraftMarginBytes mergeDraftMarginBytes defaultDraftMargin)
+                        (Proto.Binary.embedded encodeDraftMarginBinary mergeDraftMarginBinary defaultDraftMargin)
                         value.margin
                         (\v ->
                             { title = value.title
@@ -435,7 +435,7 @@ mergeDraftBytes =
 
                 6 ->
                     Proto.Binary.field
-                        (Proto.Binary.enum encodeMoodBytes decodeMoodBytes)
+                        (Proto.Binary.enum encodeMoodBinary decodeMoodBinary)
                         (\v ->
                             { title = value.title
                             , body = value.body
@@ -476,15 +476,15 @@ mergeDraftBytes =
 
 {-| Decodes a [`Draft`](#Draft) from protobuf binary.
 -}
-decodeDraftBytes : Proto.Binary.Decoder Draft
-decodeDraftBytes =
-    mergeDraftBytes defaultDraft
+decodeDraftBinary : Proto.Binary.Decoder Draft
+decodeDraftBinary =
+    mergeDraftBinary defaultDraft
 
 
 {-| Decodes a [`DraftMargin`](#DraftMargin) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeDraftMarginBytes : DraftMargin -> Proto.Binary.Decoder DraftMargin
-mergeDraftMarginBytes =
+mergeDraftMarginBinary : DraftMargin -> Proto.Binary.Decoder DraftMargin
+mergeDraftMarginBinary =
     Proto.Binary.merge
         "field_order.v1.Draft.Margin"
         (\number wire value ->
@@ -519,6 +519,6 @@ mergeDraftMarginBytes =
 
 {-| Decodes a [`DraftMargin`](#DraftMargin) from protobuf binary.
 -}
-decodeDraftMarginBytes : Proto.Binary.Decoder DraftMargin
-decodeDraftMarginBytes =
-    mergeDraftMarginBytes defaultDraftMargin
+decodeDraftMarginBinary : Proto.Binary.Decoder DraftMargin
+decodeDraftMarginBinary =
+    mergeDraftMarginBinary defaultDraftMargin

@@ -80,14 +80,14 @@ defaultZone =
 -}
 messageZoneRequest : Proto.Message.Message ZoneRequest
 messageZoneRequest =
-    Proto.Message.init "zones.v1.ZoneRequest" encodeZoneRequest decodeZoneRequest encodeZoneRequestBytes decodeZoneRequestBytes
+    Proto.Message.init "zones.v1.ZoneRequest" encodeZoneRequest decodeZoneRequest encodeZoneRequestBinary decodeZoneRequestBinary
 
 
 {-| The typed value of [`Zone`](#Zone): its full name and codecs.
 -}
 messageZone : Proto.Message.Message Zone
 messageZone =
-    Proto.Message.init "zones.v1.Zone" encodeZone decodeZone encodeZoneBytes decodeZoneBytes
+    Proto.Message.init "zones.v1.Zone" encodeZone decodeZone encodeZoneBinary decodeZoneBinary
 
 
 
@@ -175,8 +175,8 @@ decodeZone =
 
 {-| Encodes a [`ZoneRequest`](#ZoneRequest) as protobuf binary.
 -}
-encodeZoneRequestBytes : ZoneRequest -> Bytes.Encode.Encoder
-encodeZoneRequestBytes value =
+encodeZoneRequestBinary : ZoneRequest -> Bytes.Encode.Encoder
+encodeZoneRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
@@ -184,8 +184,8 @@ encodeZoneRequestBytes value =
 
 {-| Encodes a [`Zone`](#Zone) as protobuf binary.
 -}
-encodeZoneBytes : Zone -> Bytes.Encode.Encoder
-encodeZoneBytes value =
+encodeZoneBinary : Zone -> Bytes.Encode.Encoder
+encodeZoneBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.int64AsInt 2 value.offsetSeconds
@@ -198,8 +198,8 @@ encodeZoneBytes value =
 
 {-| Decodes a [`ZoneRequest`](#ZoneRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeZoneRequestBytes : ZoneRequest -> Proto.Binary.Decoder ZoneRequest
-mergeZoneRequestBytes =
+mergeZoneRequestBinary : ZoneRequest -> Proto.Binary.Decoder ZoneRequest
+mergeZoneRequestBinary =
     Proto.Binary.merge
         "zones.v1.ZoneRequest"
         (\number wire value ->
@@ -222,15 +222,15 @@ mergeZoneRequestBytes =
 
 {-| Decodes a [`ZoneRequest`](#ZoneRequest) from protobuf binary.
 -}
-decodeZoneRequestBytes : Proto.Binary.Decoder ZoneRequest
-decodeZoneRequestBytes =
-    mergeZoneRequestBytes defaultZoneRequest
+decodeZoneRequestBinary : Proto.Binary.Decoder ZoneRequest
+decodeZoneRequestBinary =
+    mergeZoneRequestBinary defaultZoneRequest
 
 
 {-| Decodes a [`Zone`](#Zone) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeZoneBytes : Zone -> Proto.Binary.Decoder Zone
-mergeZoneBytes =
+mergeZoneBinary : Zone -> Proto.Binary.Decoder Zone
+mergeZoneBinary =
     Proto.Binary.merge
         "zones.v1.Zone"
         (\number wire value ->
@@ -265,6 +265,6 @@ mergeZoneBytes =
 
 {-| Decodes a [`Zone`](#Zone) from protobuf binary.
 -}
-decodeZoneBytes : Proto.Binary.Decoder Zone
-decodeZoneBytes =
-    mergeZoneBytes defaultZone
+decodeZoneBinary : Proto.Binary.Decoder Zone
+decodeZoneBinary =
+    mergeZoneBinary defaultZone

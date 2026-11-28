@@ -60,8 +60,8 @@ send =
             "Send"
             Envelope.V1.encodeEnvelope
             Envelope.V1.decodeEnvelopeWith
-            Envelope.V1.encodeEnvelopeBytes
-            Envelope.V1.decodeEnvelopeBytes
+            Envelope.V1.encodeEnvelopeBinary
+            Envelope.V1.decodeEnvelopeBinary
         )
 
 

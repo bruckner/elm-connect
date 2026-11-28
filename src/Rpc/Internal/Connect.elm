@@ -1,16 +1,16 @@
 module Rpc.Internal.Connect exposing
-    ( connectGet
+    ( connectBinaryMessage
+    , connectGet
     , connectGetBinary
     , connectMessage
     , connectPost
     , connectPostBinary
-    , connectProtoMessage
     , connectTimeout
     )
 
 {-| The Connect protocol: its POST, and its GET of a method without side
 effects, as JSON or protobuf binary, and its reading of an answer under either
-codec. Not exposed; `Rpc.Protocol.connect` and `connectProto` install these
+codec. Not exposed; `Rpc.Protocol.connect` and `connectBinary` install these
 functions and `withConnectGet` the GET builders (`Rpc.Internal.Protocol`), so a
 program carries only the builders of the options it names: a POST-only program
 no percent-encoding, a JSON program no elm/bytes. A failure is read as every
@@ -66,7 +66,7 @@ connectPostBinary encode _ _ settings encoder =
     connectRequest settings (Body.bytes (encode encoder))
 
 
-{-| Connect's GET under the proto codec: the binary as unpadded URL-safe
+{-| Connect's GET under the binary codec: the binary as unpadded URL-safe
 base64 in the query.
 -}
 connectGetBinary : (Bytes.Encode.Encoder -> Bytes) -> (Bytes -> String) -> Options -> Settings -> Bytes.Encode.Encoder -> Request
@@ -185,9 +185,9 @@ connectMessage overRead options _ answer =
 
 {-| Connect's message of a protobuf binary answer.
 -}
-connectProtoMessage : (Options -> Bytes -> Maybe Size) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
-connectProtoMessage overRead options _ answer =
-    Limit.bytesMessage overRead options (connectProtoRead answer)
+connectBinaryMessage : (Options -> Bytes -> Maybe Size) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
+connectBinaryMessage overRead options _ answer =
+    Limit.bytesMessage overRead options (connectBinaryRead answer)
 
 
 {-| Connect's reading of a JSON answer: success is status 200, as
@@ -219,8 +219,8 @@ connectRead answer =
 `application/proto` or with no content type (`Envelope.label`) is the response's
 binary; every other answer is JSON, read as under the JSON codec.
 -}
-connectProtoRead : Http.Response Bytes -> ( Maybe Http.Metadata, Result Error GoodBytes )
-connectProtoRead answer =
+connectBinaryRead : Http.Response Bytes -> ( Maybe Http.Metadata, Result Error GoodBytes )
+connectBinaryRead answer =
     ( Envelope.metadataOf answer
     , case answer of
         Http.GoodStatus_ metadata raw ->

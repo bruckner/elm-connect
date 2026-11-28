@@ -38,8 +38,8 @@ fetchMemo =
             "GetNote"
             Notes.Api.encodeGetNoteRequest
             (\_ -> Notes.Api.decodeMemo)
-            Notes.Api.encodeGetNoteRequestBytes
-            Notes.Api.decodeMemoBytes
+            Notes.Api.encodeGetNoteRequestBinary
+            Notes.Api.decodeMemoBinary
         )
 
 

@@ -16,9 +16,9 @@ import Test exposing (Test, describe)
 suite : Test
 suite =
     describe "the generated binary codecs against prost-reflect"
-        [ Codec.BinaryRoundTrip.suite "wire=both" Generated.Codec.Codecs.bothBinary Generated.Codec.Data.samples
-        , Codec.BinaryRoundTrip.suite "wire=both, int64=int" Generated.Codec.Codecs.bothInt64IntBinary Generated.Codec.DataInt64Int.samples
-        , Codec.BinaryRoundTrip.suite "wire=both, bytes=bytes" Generated.Codec.Codecs.bothBytesBytesBinary Generated.Codec.Data.samples
-        , Codec.BinaryRoundTrip.suite "wire=proto" Generated.Codec.Codecs.binaryBinary Generated.Codec.Data.samples
-        , Codec.BinaryRoundTrip.suiteKeeping "wire=both, unknown_fields=keep" Generated.Codec.Codecs.keepBinary Generated.Codec.Data.samples
+        [ Codec.BinaryRoundTrip.suite "codec=both" Generated.Codec.Codecs.bothBinary Generated.Codec.Data.samples
+        , Codec.BinaryRoundTrip.suite "codec=both, int64=int" Generated.Codec.Codecs.bothInt64IntBinary Generated.Codec.DataInt64Int.samples
+        , Codec.BinaryRoundTrip.suite "codec=both, bytes=bytes" Generated.Codec.Codecs.bothBytesBytesBinary Generated.Codec.Data.samples
+        , Codec.BinaryRoundTrip.suite "codec=binary" Generated.Codec.Codecs.binaryBinary Generated.Codec.Data.samples
+        , Codec.BinaryRoundTrip.suiteKeeping "codec=both, unknown_fields=keep" Generated.Codec.Codecs.keepBinary Generated.Codec.Data.samples
         ]

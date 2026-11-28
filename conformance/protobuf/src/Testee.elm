@@ -5,7 +5,7 @@ port module Testee exposing (main)
 request on `requests` is a `protobuf_test_messages.proto3.TestAllTypesProto3`
 in protobuf binary (base64) or proto3 JSON, read with the generated decoders
 and written back in the format asked for with the generated encoders,
-answered on `responses`. The test messages are generated under `wire=both`,
+answered on `responses`. The test messages are generated under `codec=both`,
 so an `Any` holds its message's binary, and is read from and written to
 proto3 JSON through [`registry`](#registry), the test messages' and the
 well-known types': one of a type it lacks fails to parse, and to serialize.
@@ -93,7 +93,7 @@ answer request =
                         reply kind problem
 
                     Ok message ->
-                        reply "protobuf" (Proto.Bytes.toBase64 (Proto.Binary.encode Proto3.encodeTestAllTypesProto3Bytes message))
+                        reply "protobuf" (Proto.Bytes.toBase64 (Proto.Binary.encode Proto3.encodeTestAllTypesProto3Binary message))
 
             other ->
                 reply "skipped" ("output format " ++ other)
@@ -105,7 +105,7 @@ read request =
         "protobuf" ->
             case Proto.Bytes.fromBase64 request.payload of
                 Just input ->
-                    Proto.Binary.decode Proto3.decodeTestAllTypesProto3Bytes input
+                    Proto.Binary.decode Proto3.decodeTestAllTypesProto3Binary input
                         |> Result.mapError (\problem -> ( "parseError", Proto.Error.toString (Proto.Error.BadBinary problem) ))
 
                 Nothing ->

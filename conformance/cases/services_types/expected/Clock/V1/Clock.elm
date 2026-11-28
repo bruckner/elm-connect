@@ -218,8 +218,8 @@ zone =
             "Zone"
             Zones.V1.encodeZoneRequest
             (\_ -> Zones.V1.decodeZone)
-            Zones.V1.encodeZoneRequestBytes
-            Zones.V1.decodeZoneBytes
+            Zones.V1.encodeZoneRequestBinary
+            Zones.V1.decodeZoneBinary
         )
 
 
@@ -237,8 +237,8 @@ set =
             "Set"
             Clock.V1.encodeAlarm
             (\_ -> Clock.V1.decodeAlarm)
-            Clock.V1.encodeAlarmBytes
-            Clock.V1.decodeAlarmBytes
+            Clock.V1.encodeAlarmBinary
+            Clock.V1.decodeAlarmBinary
         )
 
 

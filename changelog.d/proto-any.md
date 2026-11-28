@@ -35,12 +35,12 @@
   Notes.V1.registry, Proto.WellKnown.registry,
   Proto.ErrorDetails.registry ]`.
 - Every package gets both codecs, its typed values and `registry`
-  whatever the `wire` option says, and `naming::codec_collision`
+  whatever the `codec` option says, and `naming::codec_collision`
   applies under every option. A message that
   reaches an `Any` has `decodeNoteWith`, taking the registry, in place
   of `decodeNote`; a type named for one with `With` at the end is
   `naming::codec_collision`.
-- Breaking: methods are built by `Proto.Method.initJson`, `initProto`
+- Breaking: methods are built by `Proto.Method.initJson`, `initBinary`
   and `init`, in place of `json`, `proto` and `both`, and a method's JSON
   codecs take the registry at use time (`Proto.Method.initJson
   "notes.v1.NotesService" "GetNote" encodeGetNoteRequest

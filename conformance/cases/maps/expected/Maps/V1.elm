@@ -143,14 +143,14 @@ enumRole =
 -}
 messageMember : Proto.Message.Message Member
 messageMember =
-    Proto.Message.init "maps.v1.Member" encodeMember decodeMember encodeMemberBytes decodeMemberBytes
+    Proto.Message.init "maps.v1.Member" encodeMember decodeMember encodeMemberBinary decodeMemberBinary
 
 
 {-| The typed value of [`Team`](#Team): its full name and codecs.
 -}
 messageTeam : Proto.Message.Message Team
 messageTeam =
-    Proto.Message.init "maps.v1.Team" encodeTeam decodeTeam encodeTeamBytes decodeTeamBytes
+    Proto.Message.init "maps.v1.Team" encodeTeam decodeTeam encodeTeamBinary decodeTeamBinary
 
 
 
@@ -286,8 +286,8 @@ decodeTeam =
 
 {-| The number protobuf binary writes a [`Role`](#Role) as.
 -}
-encodeRoleBytes : Role -> Int
-encodeRoleBytes value =
+encodeRoleBinary : Role -> Int
+encodeRoleBinary value =
     case value of
         RoleUnspecified ->
             0
@@ -298,8 +298,8 @@ encodeRoleBytes value =
 
 {-| Encodes a [`Member`](#Member) as protobuf binary.
 -}
-encodeMemberBytes : Member -> Bytes.Encode.Encoder
-encodeMemberBytes value =
+encodeMemberBinary : Member -> Bytes.Encode.Encoder
+encodeMemberBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
@@ -307,8 +307,8 @@ encodeMemberBytes value =
 
 {-| Encodes a [`Team`](#Team) as protobuf binary.
 -}
-encodeTeamBytes : Team -> Bytes.Encode.Encoder
-encodeTeamBytes value =
+encodeTeamBinary : Team -> Bytes.Encode.Encoder
+encodeTeamBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.dict Proto.Binary.string Proto.Binary.string 1 value.labels
         , Proto.Binary.dict Proto.Binary.int32 Proto.Binary.string 2 value.bySeat
@@ -317,8 +317,8 @@ encodeTeamBytes value =
         , Proto.Binary.dict Proto.Binary.fixed32 Proto.Binary.int64 5 value.totals
         , Proto.Binary.dict Proto.Binary.int64 Proto.Binary.string 6 value.byId
         , Proto.Binary.dict Proto.Binary.uint64 Proto.Binary.int32 7 value.counts
-        , Proto.Binary.dict Proto.Binary.string (Proto.Binary.embedded encodeMemberBytes mergeMemberBytes defaultMember) 8 value.members
-        , Proto.Binary.dict Proto.Binary.int32 (Proto.Binary.enum encodeRoleBytes decodeRoleBytes) 9 value.roles
+        , Proto.Binary.dict Proto.Binary.string (Proto.Binary.embedded encodeMemberBinary mergeMemberBinary defaultMember) 8 value.members
+        , Proto.Binary.dict Proto.Binary.int32 (Proto.Binary.enum encodeRoleBinary decodeRoleBinary) 9 value.roles
         , Proto.Binary.boolMap Proto.Binary.string 10 value.byFlag
         , Proto.Binary.dict Proto.Binary.sfixed32 Proto.Binary.string 11 value.byOffset
         , Proto.Binary.dict Proto.Binary.sint64 Proto.Binary.string 12 value.deltas
@@ -333,8 +333,8 @@ encodeTeamBytes value =
 
 {-| A [`Role`](#Role) from the number protobuf binary carries.
 -}
-decodeRoleBytes : Int -> Role
-decodeRoleBytes number =
+decodeRoleBinary : Int -> Role
+decodeRoleBinary number =
     case number of
         1 ->
             RoleOwner
@@ -345,8 +345,8 @@ decodeRoleBytes number =
 
 {-| Decodes a [`Member`](#Member) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeMemberBytes : Member -> Proto.Binary.Decoder Member
-mergeMemberBytes =
+mergeMemberBinary : Member -> Proto.Binary.Decoder Member
+mergeMemberBinary =
     Proto.Binary.merge
         "maps.v1.Member"
         (\number wire value ->
@@ -369,15 +369,15 @@ mergeMemberBytes =
 
 {-| Decodes a [`Member`](#Member) from protobuf binary.
 -}
-decodeMemberBytes : Proto.Binary.Decoder Member
-decodeMemberBytes =
-    mergeMemberBytes defaultMember
+decodeMemberBinary : Proto.Binary.Decoder Member
+decodeMemberBinary =
+    mergeMemberBinary defaultMember
 
 
 {-| Decodes a [`Team`](#Team) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeTeamBytes : Team -> Proto.Binary.Decoder Team
-mergeTeamBytes =
+mergeTeamBinary : Team -> Proto.Binary.Decoder Team
+mergeTeamBinary =
     Proto.Binary.merge
         "maps.v1.Team"
         (\number wire value ->
@@ -553,7 +553,7 @@ mergeTeamBytes =
                 8 ->
                     Proto.Binary.mapEntry
                         Proto.Binary.string
-                        (Proto.Binary.embedded encodeMemberBytes mergeMemberBytes defaultMember)
+                        (Proto.Binary.embedded encodeMemberBinary mergeMemberBinary defaultMember)
                         (\k v ->
                             { labels = value.labels
                             , bySeat = value.bySeat
@@ -577,7 +577,7 @@ mergeTeamBytes =
                 9 ->
                     Proto.Binary.mapEntry
                         Proto.Binary.int32
-                        (Proto.Binary.enum encodeRoleBytes decodeRoleBytes)
+                        (Proto.Binary.enum encodeRoleBinary decodeRoleBinary)
                         (\k v ->
                             { labels = value.labels
                             , bySeat = value.bySeat
@@ -742,6 +742,6 @@ mergeTeamBytes =
 
 {-| Decodes a [`Team`](#Team) from protobuf binary.
 -}
-decodeTeamBytes : Proto.Binary.Decoder Team
-decodeTeamBytes =
-    mergeTeamBytes defaultTeam
+decodeTeamBinary : Proto.Binary.Decoder Team
+decodeTeamBinary =
+    mergeTeamBinary defaultTeam
