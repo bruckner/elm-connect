@@ -231,12 +231,11 @@ import Bytes exposing (Bytes)
 import Dict
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
-import Proto.Any exposing (Any)
 import Proto.Bytes
 import Proto.Duration exposing (Duration)
 import Proto.Error exposing (Error)
 import Proto.Int64
-import Proto.Internal.Any as InternalAny
+import Proto.Internal.Any as InternalAny exposing (Any)
 import Proto.Internal.Depth as Depth
 import Proto.Internal.Duration as InternalDuration
 import Proto.Internal.FieldMask as FieldMask
@@ -2497,7 +2496,7 @@ anyJson registry ((InternalAny.Any url _) as any) =
         Ok (Json.Encode.object [])
 
     else
-        Proto.Any.toJson registry any
+        InternalRegistry.anyToJson registry any
             |> Result.map (anyObject url)
 
 
